@@ -1,3 +1,11 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Їж, щоб рости</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap">
@@ -10,6 +18,8 @@
   --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
   --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:14px;
+  --sab:max(env(safe-area-inset-bottom,0px),var(--tg-safe-area-inset-bottom,0px));
+  --vh:var(--tg-viewport-stable-height,100vh);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0F1412; --surface:#18201C; --fg:#E7EEE9; --muted:#9AA8A0; --line:#2A3530;
@@ -20,26 +30,30 @@
   --accent:#4FBF8E; --accent-ink:#06130D; --accent-soft:#183428;
   --iron:#C9D4CE; --amber:#F0A847; --amber-soft:#3A2A12; --warn:#FF8A80; --warn-soft:#3B1916; color-scheme:dark}
 html,body{height:100%}
-body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 *{box-sizing:border-box}
 button,input,select{font:inherit;color:inherit}
-button{cursor:pointer}
+button{cursor:pointer;touch-action:manipulation}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{max-width:560px;margin:0 auto;min-height:100%;padding:0 16px calc(84px + env(safe-area-inset-bottom,0px))}
+.app{max-width:560px;margin:0 auto;min-height:100%;padding:0 16px calc(90px + var(--sab))}
+body.typing .app{padding-bottom:24px}
 .num{font-variant-numeric:tabular-nums}
 /* top */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:14px 0 10px;display:grid;gap:10px}
 .brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .brand h1{font-family:var(--f-display);font-size:19px;margin:0;letter-spacing:-.01em}
 .brand small{color:var(--muted);font-size:12px;text-align:right}
-.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.day{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 0 6px;display:grid;gap:3px;justify-items:center;font-weight:700;font-size:13px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.day{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 0 6px;display:grid;gap:3px;justify-items:center;font-weight:700;font-size:13px;min-width:0}
 .day i{width:6px;height:6px;border-radius:50%;background:var(--line)}
-.day i.ok{background:var(--accent)} .day i.lo{background:var(--amber)}
+.day i.ok{background:var(--accent)} .day i.lo{background:var(--amber)} .day i.bad{background:var(--warn)}
 .day[aria-pressed="true"]{background:var(--iron);color:var(--bg);border-color:var(--iron)}
-/* banner */
-.banner{background:var(--amber-soft);color:var(--fg);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-size:14px}
+/* banners */
+.banner{background:var(--amber-soft);color:var(--fg);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-size:14px;margin-bottom:12px}
+.banner.w{background:var(--warn-soft)}
 .banner button{border:0;background:var(--amber);color:var(--bg);font-weight:700;border-radius:999px;padding:7px 12px;white-space:nowrap}
+.banner.w button{background:var(--warn)}
 /* day summary */
 .sum{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px}
 .meters{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -47,36 +61,39 @@ button{cursor:pointer}
 .meter .lbl{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
 .meter .val{font-size:20px;font-weight:700}
 .meter .val span{font-size:13px;color:var(--muted);font-weight:500}
-.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;position:relative}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
 .bar b{display:block;height:100%;border-radius:99px;background:var(--accent)}
 .bar b.lo{background:var(--amber)} .bar b.hi{background:var(--warn)}
 .cost{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--line);padding-top:10px;font-size:14px;color:var(--muted)}
 .cost strong{color:var(--fg);font-size:17px}
 /* meals */
 .list{display:grid;gap:10px;margin-top:12px}
-.meal{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:start}
+.meal{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:start}
+.meal.bad{border-color:var(--warn);background:var(--warn-soft)}
 .meal .t{font-weight:700;color:var(--muted);font-size:13px;padding-top:2px}
-.meal .n{font-weight:700;min-width:0}
+.meal .n{font-weight:700}
 .meal .m{font-size:13px;color:var(--muted);margin-top:3px}
 .meal .x{font-family:var(--f-display);font-size:13px;color:var(--accent);padding-top:2px}
 .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
 .chip{font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;background:var(--bg);color:var(--muted);border:1px solid var(--line)}
 .chip.sw{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.chip.bad{background:var(--warn);color:var(--bg);border-color:transparent}
 .foot{color:var(--muted);font-size:13px;margin:14px 2px 0;display:grid;gap:4px}
 /* sections */
-.sec{display:grid;gap:10px;margin-top:14px}
+.sec{display:grid;gap:10px;margin-top:16px}
 .h2{font-family:var(--f-display);font-size:15px;margin:6px 2px 0}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
-.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .kv div{display:grid;gap:2px;min-width:0}
 .kv span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
 .kv strong{font-size:17px}
 .grp{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin:8px 2px 0}
-.item{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;width:100%;text-align:left}
+.item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;width:100%;text-align:left}
 .item .box{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;font-size:14px;font-weight:800;color:var(--accent-ink)}
 .item.done .box{background:var(--accent);border-color:var(--accent)}
 .item.done .nm{text-decoration:line-through;color:var(--muted)}
-.item .nm{min-width:0;font-weight:600}
+.item.ex .box{background:var(--warn);border-color:var(--warn);color:var(--bg)}
+.item .nm{font-weight:600}
 .item .q{font-size:13px;color:var(--muted)}
 .item .pr{font-weight:700;font-size:14px;text-align:right}
 .rows{display:grid;gap:6px}
@@ -84,54 +101,88 @@ button{cursor:pointer}
 .row:last-child{border-bottom:0}
 .row span:first-child{min-width:0}
 .tips{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px}
-.note{font-size:12px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin:0}
 .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:700;background:var(--accent);color:var(--accent-ink);width:100%}
 .btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
 .btn.danger{background:var(--warn);color:var(--bg)}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 /* form */
-.form{display:grid;gap:12px}
-.fld{display:grid;gap:6px}
-.fld label{font-size:13px;font-weight:700;color:var(--muted)}
-.fld input,.fld select{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;font-size:16px}
+.form{display:grid;gap:14px}
+.fs{display:grid;gap:12px;border:0;margin:0;padding:0 0 14px;border-bottom:1px dashed var(--line)}
+.fs:last-of-type{border-bottom:0}
+.fs legend{font-family:var(--f-display);font-size:14px;padding:0;margin-bottom:12px}
+.fld{display:grid;gap:6px;min-width:0}
+.fld label,.fld .lb{font-size:13px;font-weight:700;color:var(--muted)}
+.fld input,.fld select{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;font-size:16px;min-width:0;-webkit-appearance:none;appearance:none}
+.fld select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
-.seg button{flex:1 1 0;min-width:90px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 8px;font-weight:700;font-size:14px}
+.seg button{flex:1 1 0;min-width:84px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 6px;font-weight:700;font-size:14px}
 .seg button[aria-pressed="true"]{background:var(--iron);color:var(--bg);border-color:var(--iron)}
-.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hint{font-size:12px;color:var(--muted);margin:0}
 .big{font-family:var(--f-display);font-size:34px;line-height:1.1}
 .warn{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600}
 .okmsg{background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600}
+.info{background:var(--amber-soft);border-radius:12px;padding:10px 12px;font-size:13px}
+details.tip{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 14px}
+details.tip summary{font-weight:700;padding:12px 0;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.tip summary::-webkit-details-marker{display:none}
+details.tip summary::after{content:"+";color:var(--muted);font-weight:700}
+details.tip[open] summary::after{content:"−"}
+details.tip div{padding:0 0 14px;font-size:14px;display:grid;gap:8px}
+details.tip p{margin:0}
 /* tabs */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + var(--sab))}
+body.typing .tabs{display:none}
 .tabs div{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
 .tab{border:0;background:transparent;border-radius:12px;padding:8px 2px;display:grid;justify-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--muted)}
 .tab svg{width:22px;height:22px}
 .tab[aria-selected="true"]{color:var(--accent);background:var(--accent-soft)}
 /* sheet */
 .scrim{position:fixed;inset:0;background:rgba(10,14,12,.45);z-index:20}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--bg);border-radius:20px 20px 0 0;max-height:86%;overflow:auto;padding:8px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--bg);border-radius:20px 20px 0 0;max-height:calc(var(--vh) * .88);overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:8px 16px calc(18px + var(--sab))}
 .sheet .in{max-width:560px;margin:0 auto;display:grid;gap:12px}
 .grab{width:40px;height:5px;border-radius:9px;background:var(--line);margin:4px auto 2px}
 .sheet h3{font-family:var(--f-display);font-size:18px;margin:0;text-wrap:balance}
 .alt{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
 .alt .a{min-width:0;font-weight:600}
 .alt .b{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.tog{display:flex;gap:6px;flex-wrap:wrap}
+.tog button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 12px;font-weight:700;font-size:13px}
+.tog button[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:var(--bg)}
+/* intro */
+.intro{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;justify-content:space-between;padding:calc(28px + env(safe-area-inset-top,0px)) 20px calc(20px + var(--sab));max-width:560px;margin:0 auto}
+.intro .step{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.intro h2{font-family:var(--f-display);font-size:26px;line-height:1.15;margin:10px 0 14px;text-wrap:balance}
+.intro p{margin:0 0 10px;font-size:16px;color:var(--muted)}
+.intro ul{margin:6px 0 0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.dots{display:flex;gap:6px;justify-content:center;margin-bottom:14px}
+.dots i{width:8px;height:8px;border-radius:9px;background:var(--line)}
+.dots i.on{width:22px;background:var(--accent)}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 </style>
+</head>
+<body>
 
 <div class="app" id="app"></div>
 <nav class="tabs" aria-label="Розділи"><div role="tablist" id="tabs"></div></nav>
 <div id="layer"></div>
+<div id="intro"></div>
 
 <script>
 const DATA={"products":[{"n":"Куряче філе","cat":"М'ясо, риба","pack":"ваговий","w":1000,"pr":239,"kg":239,"ed":1,"kc":110,"p":23,"f":1.5,"c":0,"gl":"","lac":"","bob":""},{"n":"Куряче стегно (з кісткою)","cat":"М'ясо, риба","pack":"ваговий","w":1000,"pr":169,"kg":169,"ed":0.75,"kc":185,"p":18,"f":12.5,"c":0,"gl":"","lac":"","bob":""},{"n":"Куряча гомілка","cat":"М'ясо, риба","pack":"ваговий","w":1000,"pr":118.8,"kg":118.8,"ed":0.7,"kc":160,"p":18,"f":9.5,"c":0,"gl":"","lac":"","bob":""},{"n":"Фарш курячий з філе","cat":"М'ясо, риба","pack":"ваговий","w":1000,"pr":269,"kg":269,"ed":1,"kc":140,"p":20,"f":6.5,"c":0,"gl":"","lac":"","bob":""},{"n":"Фарш свино-яловичий","cat":"М'ясо, риба","pack":"ваговий","w":1000,"pr":279.4,"kg":279.4,"ed":1,"kc":260,"p":16,"f":21,"c":0,"gl":"","lac":"","bob":""},{"n":"Індиче філе","cat":"М'ясо, риба","pack":"ваговий","w":1000,"pr":477.4,"kg":477.4,"ed":1,"kc":115,"p":24,"f":1.5,"c":0,"gl":"","lac":"","bob":""},{"n":"Печінка яловича","cat":"М'ясо, риба","pack":"ваговий","w":1000,"pr":149,"kg":149,"ed":1,"kc":125,"p":20,"f":3.5,"c":4,"gl":"","lac":"","bob":""},{"n":"Свинина (гуляш)","cat":"М'ясо, риба","pack":"ваговий","w":1000,"pr":234,"kg":234,"ed":1,"kc":230,"p":17,"f":18,"c":0,"gl":"","lac":"","bob":""},{"n":"Тунець у розсолі «Повна Чаша»","cat":"М'ясо, риба","pack":"банка 185 г","w":185,"pr":57.99,"kg":313.45945945946,"ed":1,"kc":105,"p":23,"f":1,"c":0,"gl":"","lac":"","bob":""},{"n":"Хек / минтай заморожений","cat":"М'ясо, риба","pack":null,"w":null,"pr":null,"kg":null,"ed":1,"kc":86,"p":16.6,"f":2.2,"c":0,"gl":"","lac":"","bob":""},{"n":"Яйця С1 «Ситий двір»","cat":"Молочне, яйця","pack":"10 шт ≈ 550 г","w":550,"pr":83.45,"kg":151.727272727273,"ed":0.9,"kc":155,"p":12.7,"f":11,"c":0.7,"gl":"","lac":"","bob":""},{"n":"Сир кисломолочний 5% «Премія»","cat":"Молочне, яйця","pack":"340 г","w":340,"pr":79.99,"kg":235.264705882353,"ed":1,"kc":121,"p":17,"f":5,"c":1.8,"gl":"","lac":"так","bob":""},{"n":"Сир кисломолочний 9% «Яготинський»","cat":"Молочне, яйця","pack":"350 г","w":350,"pr":114,"kg":325.714285714286,"ed":1,"kc":159,"p":16.7,"f":9,"c":2,"gl":"","lac":"так","bob":""},{"n":"Молоко 2,5% «Селянське»","cat":"Молочне, яйця","pack":"900 г","w":900,"pr":59.99,"kg":66.6555555555556,"ed":1,"kc":52,"p":2.9,"f":2.5,"c":4.7,"gl":"","lac":"так","bob":""},{"n":"Кефір 2,5%","cat":"Молочне, яйця","pack":null,"w":null,"pr":null,"kg":null,"ed":1,"kc":51,"p":2.9,"f":2.5,"c":4,"gl":"","lac":"так","bob":""},{"n":"Сир твердий «Радамер» 45%","cat":"Молочне, яйця","pack":"100 г","w":100,"pr":52.9,"kg":529,"ed":1,"kc":360,"p":25,"f":28,"c":0,"gl":"","lac":"так","bob":""},{"n":"Сметана 15%","cat":"Молочне, яйця","pack":null,"w":null,"pr":null,"kg":null,"ed":1,"kc":160,"p":2.6,"f":15,"c":3,"gl":"","lac":"так","bob":""},{"n":"Гречка «Ситий двір»","cat":"Крупи, гарніри","pack":"1 кг","w":1000,"pr":109,"kg":109,"ed":1,"kc":330,"p":12.6,"f":3.3,"c":62,"gl":"","lac":"","bob":""},{"n":"Вівсяні пластівці «Премія»","cat":"Крупи, гарніри","pack":"500 г","w":500,"pr":51.49,"kg":102.98,"ed":1,"kc":360,"p":12,"f":6.5,"c":60,"gl":"сліди","lac":"","bob":""},{"n":"Рис круглий «Ситий двір»","cat":"Крупи, гарніри","pack":"1 кг","w":1000,"pr":89.49,"kg":89.49,"ed":1,"kc":340,"p":7,"f":1,"c":75,"gl":"","lac":"","bob":""},{"n":"Макарони пера «Повна Чаша»","cat":"Крупи, гарніри","pack":"1 кг","w":1000,"pr":36.99,"kg":36.99,"ed":1,"kc":350,"p":12,"f":1.5,"c":70,"gl":"так","lac":"","bob":""},{"n":"Кус-кус птітім «Trapeza»","cat":"Крупи, гарніри","pack":"500 г","w":500,"pr":99,"kg":198,"ed":1,"kc":360,"p":12.5,"f":1,"c":72,"gl":"так","lac":"","bob":""},{"n":"Булгур «Attuale»","cat":"Крупи, гарніри","pack":"1 кг","w":1000,"pr":99,"kg":99,"ed":1,"kc":345,"p":12,"f":1.5,"c":69,"gl":"так","lac":"","bob":""},{"n":"Картопля біла","cat":"Крупи, гарніри","pack":"ваговий","w":1000,"pr":39.5,"kg":39.5,"ed":0.85,"kc":77,"p":2,"f":0.1,"c":17,"gl":"","lac":"","bob":""},{"n":"Хліб пшеничний","cat":"Крупи, гарніри","pack":null,"w":null,"pr":null,"kg":null,"ed":1,"kc":250,"p":8,"f":3,"c":48,"gl":"так","lac":"","bob":""},{"n":"Лаваш","cat":"Крупи, гарніри","pack":null,"w":null,"pr":null,"kg":null,"ed":1,"kc":275,"p":9,"f":1.2,"c":56,"gl":"так","lac":"","bob":""},{"n":"Морква","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":17.5,"kg":17.5,"ed":0.9,"kc":35,"p":1.3,"f":0.1,"c":7,"gl":"","lac":"","bob":""},{"n":"Цибуля ріпчаста","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":20,"kg":20,"ed":0.9,"kc":41,"p":1.4,"f":0.2,"c":8,"gl":"","lac":"","bob":""},{"n":"Огірок","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":87.5,"kg":87.5,"ed":1,"kc":15,"p":0.8,"f":0.1,"c":2.8,"gl":"","lac":"","bob":""},{"n":"Помідор","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":77.5,"kg":77.5,"ed":1,"kc":20,"p":0.9,"f":0.2,"c":3.9,"gl":"","lac":"","bob":""},{"n":"Перець солодкий червоний","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":99,"kg":99,"ed":0.85,"kc":27,"p":1,"f":0.3,"c":5.3,"gl":"","lac":"","bob":""},{"n":"Кабачок","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":51.5,"kg":51.5,"ed":0.95,"kc":24,"p":0.6,"f":0.3,"c":4.6,"gl":"","lac":"","bob":""},{"n":"Капуста білоголова","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":22,"kg":22,"ed":0.9,"kc":27,"p":1.8,"f":0.1,"c":4.7,"gl":"","lac":"","bob":""},{"n":"Броколі","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":82.5,"kg":82.5,"ed":0.9,"kc":34,"p":2.8,"f":0.4,"c":6.6,"gl":"","lac":"","bob":""},{"n":"Банан","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":82.2,"kg":82.2,"ed":0.65,"kc":96,"p":1.5,"f":0.5,"c":21,"gl":"","lac":"","bob":""},{"n":"Яблуко Гала","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":26,"kg":26,"ed":0.9,"kc":52,"p":0.3,"f":0.2,"c":12,"gl":"","lac":"","bob":""},{"n":"Часник","cat":"Овочі, фрукти","pack":"ваговий","w":1000,"pr":164,"kg":164,"ed":0.85,"kc":149,"p":6.4,"f":0.5,"c":30,"gl":"","lac":"","bob":""},{"n":"Квасоля відварена «Верес»","cat":"Інше","pack":"банка 200 г","w":200,"pr":52.49,"kg":262.45,"ed":1,"kc":100,"p":7,"f":0.5,"c":17,"gl":"","lac":"","bob":"так"},{"n":"Олія соняшникова «Щедрий Дар»","cat":"Інше","pack":"0,85 л ≈ 780 г","w":780,"pr":98.99,"kg":126.910256410256,"ed":1,"kc":899,"p":0,"f":99.9,"c":0,"gl":"","lac":"","bob":""},{"n":"Арахісова паста","cat":"Інше","pack":null,"w":null,"pr":null,"kg":null,"ed":1,"kc":590,"p":25,"f":50,"c":16,"gl":"","lac":"","bob":"так"},{"n":"Мед","cat":"Інше","pack":null,"w":null,"pr":null,"kg":null,"ed":1,"kc":304,"p":0.3,"f":0,"c":82,"gl":"","lac":"","bob":""},{"n":"Томатна паста «Верес» 25%","cat":"Інше","pack":"130 г","w":130,"pr":32.99,"kg":253.769230769231,"ed":1,"kc":82,"p":4.3,"f":0.5,"c":16,"gl":"","lac":"","bob":""},{"n":"Протеїн сироватковий","cat":"Спортпит (опційно)","pack":null,"w":null,"pr":null,"kg":null,"ed":1,"kc":380,"p":75,"f":6,"c":8,"gl":"","lac":"так","bob":""}],"dishes":{"Вівсянка з бананом на молоці":{"t":"Сніданок","i":[["Вівсяні пластівці «Премія»",80],["Молоко 2,5% «Селянське»",200],["Банан",150]],"ma":false},"Омлет з сиром і помідорами":{"t":"Сніданок","i":[["Яйця С1 «Ситий двір»",165],["Сир твердий «Радамер» 45%",30],["Помідор",100],["Олія соняшникова «Щедрий Дар»",5]],"ma":false},"Сир кисломолочний з бананом":{"t":"Сніданок","i":[["Сир кисломолочний 5% «Премія»",200],["Банан",150]],"ma":false},"Гречка з курячим філе":{"t":"Основна","i":[["Гречка «Ситий двір»",100],["Куряче філе",200],["Цибуля ріпчаста",30],["Морква",50],["Олія соняшникова «Щедрий Дар»",10]],"ma":true},"Котлети з курячого фаршу без хліба + картопля":{"t":"Основна","i":[["Фарш курячий з філе",200],["Яйця С1 «Ситий двір»",55],["Цибуля ріпчаста",40],["Картопля біла",300],["Олія соняшникова «Щедрий Дар»",10]],"ma":true},"Макарони по-флотськи":{"t":"Основна","i":[["Макарони пера «Повна Чаша»",100],["Фарш свино-яловичий",150],["Цибуля ріпчаста",40],["Томатна паста «Верес» 25%",20]],"ma":true},"Кус-кус з куркою і овочами":{"t":"Основна","i":[["Кус-кус птітім «Trapeza»",80],["Куряче філе",180],["Перець солодкий червоний",80],["Кабачок",100],["Олія соняшникова «Щедрий Дар»",10]],"ma":true},"Курячі стегна запечені з картоплею":{"t":"Основна","i":[["Куряче стегно (з кісткою)",350],["Картопля біла",300],["Часник",10],["Олія соняшникова «Щедрий Дар»",10]],"ma":true},"Печінка з цибулею і гречкою":{"t":"Основна","i":[["Печінка яловича",200],["Цибуля ріпчаста",80],["Гречка «Ситий двір»",90],["Олія соняшникова «Щедрий Дар»",10]],"ma":false},"Гомілки тушковані з булгуром":{"t":"Основна","i":[["Куряча гомілка",350],["Булгур «Attuale»",90],["Морква",60],["Цибуля ріпчаста",40]],"ma":true},"Рис з куркою і броколі":{"t":"Основна","i":[["Рис круглий «Ситий двір»",90],["Куряче філе",180],["Броколі",150],["Олія соняшникова «Щедрий Дар»",5]],"ma":true},"Гуляш зі свинини з гречкою":{"t":"Основна","i":[["Свинина (гуляш)",180],["Гречка «Ситий двір»",90],["Цибуля ріпчаста",50],["Морква",50],["Томатна паста «Верес» 25%",20]],"ma":true},"Квасоля з куркою в томаті":{"t":"Основна","i":[["Квасоля відварена «Верес»",200],["Куряче філе",150],["Цибуля ріпчаста",40],["Томатна паста «Верес» 25%",20]],"ma":true},"Тунець з картоплею і огірком":{"t":"Основна","i":[["Тунець у розсолі «Повна Чаша»",185],["Картопля біла",250],["Огірок",150]],"ma":false},"Салат з тунцем і яйцем":{"t":"Перекус","i":[["Тунець у розсолі «Повна Чаша»",185],["Яйця С1 «Ситий двір»",110],["Огірок",150],["Помідор",150]],"ma":false},"Домашній гейнер":{"t":"Перекус","i":[["Молоко 2,5% «Селянське»",300],["Вівсяні пластівці «Премія»",60],["Банан",150],["Арахісова паста",30]],"ma":false},"Сир 9% з яблуком":{"t":"Перекус","i":[["Сир кисломолочний 9% «Яготинський»",180],["Яблуко Гала",150]],"ma":false},"Яєчня з картоплею і цибулею":{"t":"Сніданок","i":[["Яйця С1 «Ситий двір»",165],["Картопля біла",250],["Цибуля ріпчаста",50],["Олія соняшникова «Щедрий Дар»",10]],"ma":false},"Сирники вівсяні з бананом":{"t":"Сніданок","i":[["Сир кисломолочний 5% «Премія»",200],["Яйця С1 «Ситий двір»",55],["Вівсяні пластівці «Премія»",30],["Банан",100],["Олія соняшникова «Щедрий Дар»",10]],"ma":false},"Гомілки в паприці з картоплею":{"t":"Основна","i":[["Куряча гомілка",400],["Картопля біла",350],["Часник",10],["Олія соняшникова «Щедрий Дар»",10]],"ma":true},"Курячі стегна з гречкою і овочами":{"t":"Основна","i":[["Куряче стегно (з кісткою)",300],["Гречка «Ситий двір»",100],["Морква",60],["Цибуля ріпчаста",40],["Олія соняшникова «Щедрий Дар»",5]],"ma":true},"Курячий суп з локшиною (заготовка)":{"t":"Основна","i":[["Куряча гомілка",250],["Картопля біла",200],["Морква",60],["Цибуля ріпчаста",40],["Макарони пера «Повна Чаша»",50]],"ma":true},"Макарони з тунцем і помідорами":{"t":"Основна","i":[["Макарони пера «Повна Чаша»",120],["Тунець у розсолі «Повна Чаша»",185],["Помідор",150],["Цибуля ріпчаста",30],["Олія соняшникова «Щедрий Дар»",10]],"ma":false},"Бюджетний гейнер":{"t":"Перекус","i":[["Молоко 2,5% «Селянське»",400],["Вівсяні пластівці «Премія»",70],["Банан",150]],"ma":false},"Омлет з кабачком і помідорами":{"t":"Сніданок","i":[["Яйця С1 «Ситий двір»",165],["Кабачок",150],["Помідор",100],["Олія соняшникова «Щедрий Дар»",5]],"ma":true},"Капуста тушкована з курячим фаршем":{"t":"Основна","i":[["Фарш курячий з філе",150],["Капуста білоголова",300],["Морква",50],["Цибуля ріпчаста",40],["Томатна паста «Верес» 25%",20],["Олія соняшникова «Щедрий Дар»",5]],"ma":true},"Куряче філе з овочами на деку":{"t":"Основна","i":[["Куряче філе",200],["Кабачок",150],["Перець солодкий червоний",100],["Цибуля ріпчаста",40],["Картопля біла",150],["Олія соняшникова «Щедрий Дар»",5]],"ma":true},"Сир 5% з яблуком":{"t":"Перекус","i":[["Сир кисломолочний 5% «Премія»",200],["Яблуко Гала",150]],"ma":true},"Яйця варені з огірком":{"t":"Перекус","i":[["Яйця С1 «Ситий двір»",165],["Огірок",150]],"ma":false}},"weeks":{"Маса · Економ":{"Пн":[["8:00","Яєчня з картоплею і цибулею",1.2],["13:00","Гомілки в паприці з картоплею",1],["17:00","Бюджетний гейнер",1],["20:00","Курячі стегна з гречкою і овочами",1]],"Вт":[["8:00","Вівсянка з бананом на молоці",1.5],["13:00","Курячий суп з локшиною (заготовка)",1.5],["17:00","Яйця варені з огірком",1],["20:00","Макарони по-флотськи",1]],"Ср":[["8:00","Яєчня з картоплею і цибулею",1.2],["13:00","Печінка з цибулею і гречкою",1.3],["17:00","Бюджетний гейнер",1],["20:00","Гомілки тушковані з булгуром",1]],"Чт":[["8:00","Вівсянка з бананом на молоці",1.2],["13:00","Курячі стегна з гречкою і овочами",1],["17:00","Бюджетний гейнер",0.8],["20:00","Макарони по-флотськи",1]],"Пт":[["8:00","Яєчня з картоплею і цибулею",1.2],["13:00","Гуляш зі свинини з гречкою",1],["17:00","Бюджетний гейнер",0.8],["20:00","Курячий суп з локшиною (заготовка)",1.5]],"Сб":[["9:00","Яєчня з картоплею і цибулею",1.2],["13:00","Гомілки в паприці з картоплею",1],["17:00","Бюджетний гейнер",1],["20:00","Макарони по-флотськи",1]],"Нд":[["9:00","Вівсянка з бананом на молоці",1.5],["13:00","Гомілки тушковані з булгуром",1.2],["17:00","Яйця варені з огірком",1],["20:00","Макарони по-флотськи",1]]},"Маса · Стандарт":{"Пн":[["8:00","Вівсянка з бананом на молоці",1.2],["13:00","Гречка з курячим філе",1.3],["17:00","Домашній гейнер",1],["20:00","Котлети з курячого фаршу без хліба + картопля",1]],"Вт":[["8:00","Омлет з сиром і помідорами",1.2],["13:00","Макарони по-флотськи",1.3],["17:00","Сир 9% з яблуком",1],["20:00","Курячі стегна запечені з картоплею",1],["21:30","Яйця варені з огірком",1]],"Ср":[["8:00","Сир кисломолочний з бананом",1.2],["13:00","Гомілки тушковані з булгуром",1.3],["17:00","Домашній гейнер",1],["20:00","Тунець з картоплею і огірком",1],["21:30","Сир 9% з яблуком",1]],"Чт":[["8:00","Вівсянка з бананом на молоці",1.2],["13:00","Печінка з цибулею і гречкою",1.2],["17:00","Яйця варені з огірком",1],["20:00","Рис з куркою і броколі",1.5],["21:30","Яйця варені з огірком",1]],"Пт":[["8:00","Омлет з сиром і помідорами",1.2],["13:00","Гуляш зі свинини з гречкою",1.2],["17:00","Домашній гейнер",1],["20:00","Квасоля з куркою в томаті",1.2],["21:30","Сир кисломолочний з бананом",1]],"Сб":[["9:00","Сир кисломолочний з бананом",1.2],["13:00","Кус-кус з куркою і овочами",1.3],["17:00","Домашній гейнер",1],["20:00","Котлети з курячого фаршу без хліба + картопля",1],["21:30","Сир 9% з яблуком",1]],"Нд":[["9:00","Вівсянка з бананом на молоці",1.2],["13:00","Курячі стегна запечені з картоплею",1],["17:00","Домашній гейнер",1],["20:00","Гречка з курячим філе",1.3]]},"Рельєф · Економ":{"Пн":[["8:00","Омлет з кабачком і помідорами",1],["13:00","Курячий суп з локшиною (заготовка)",1.3],["17:00","Сир 5% з яблуком",1],["20:00","Капуста тушкована з курячим фаршем",1]],"Вт":[["8:00","Сир кисломолочний з бананом",1],["13:00","Печінка з цибулею і гречкою",1],["17:00","Яйця варені з огірком",1],["20:00","Курячий суп з локшиною (заготовка)",0.9]],"Ср":[["8:00","Сир кисломолочний з бананом",1.3],["13:00","Капуста тушкована з курячим фаршем",1.3],["17:00","Яйця варені з огірком",1],["20:00","Гречка з курячим філе",1]],"Чт":[["8:00","Омлет з кабачком і помідорами",1],["13:00","Гречка з курячим філе",1],["17:00","Сир 5% з яблуком",1],["20:00","Квасоля з куркою в томаті",1.4]],"Пт":[["8:00","Омлет з кабачком і помідорами",1],["13:00","Курячий суп з локшиною (заготовка)",1.3],["17:00","Яйця варені з огірком",1],["20:00","Капуста тушкована з курячим фаршем",1.2]],"Сб":[["9:00","Омлет з кабачком і помідорами",1],["13:00","Печінка з цибулею і гречкою",0.8],["17:00","Сир 5% з яблуком",1],["20:00","Гречка з курячим філе",1]],"Нд":[["9:00","Сир кисломолочний з бананом",1],["13:00","Котлети з курячого фаршу без хліба + картопля",1],["17:00","Яйця варені з огірком",1],["20:00","Капуста тушкована з курячим фаршем",1.6]]},"Рельєф · Стандарт":{"Пн":[["8:00","Омлет з сиром і помідорами",1],["13:00","Гречка з курячим філе",1],["17:00","Сир 5% з яблуком",1],["20:00","Куряче філе з овочами на деку",1]],"Вт":[["8:00","Сир кисломолочний з бананом",1],["13:00","Рис з куркою і броколі",1],["17:00","Салат з тунцем і яйцем",1],["20:00","Котлети з курячого фаршу без хліба + картопля",0.8]],"Ср":[["8:00","Омлет з кабачком і помідорами",1],["13:00","Кус-кус з куркою і овочами",1],["17:00","Сир 5% з яблуком",1],["20:00","Куряче філе з овочами на деку",1.4]],"Чт":[["8:00","Вівсянка з бананом на молоці",0.8],["13:00","Гречка з курячим філе",1],["17:00","Салат з тунцем і яйцем",1],["20:00","Квасоля з куркою в томаті",1]],"Пт":[["8:00","Омлет з сиром і помідорами",1],["13:00","Рис з куркою і броколі",1],["17:00","Сир 5% з яблуком",1],["20:00","Котлети з курячого фаршу без хліба + картопля",0.8]],"Сб":[["9:00","Сир кисломолочний з бананом",1.1],["13:00","Куряче філе з овочами на деку",1.4],["17:00","Яйця варені з огірком",1],["20:00","Кус-кус з куркою і овочами",1]],"Нд":[["9:00","Омлет з кабачком і помідорами",1],["13:00","Гречка з курячим філе",1],["17:00","Салат з тунцем і яйцем",1],["20:00","Рис з куркою і броколі",0.8]]}},"priceDate":"7–8 жовтня 2026, Сільпо онлайн"};
 const DAYS=["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
-const ACTS=[["Сидяча робота, тренувань майже немає",1.2],["1–3 тренування на тиждень",1.375],["3–5 тренувань на тиждень",1.55],["6–7 тренувань або фізична робота",1.725]];
-const SAMPLE={sex:"Чоловік",w:65,h:178,age:22,act:2,goal:"Набір маси",budget:"Економ"};
+const LIFE=[["Сидяча",1.25,"робота чи навчання сидячи"],["На ногах",1.4,"багато ходиш протягом дня"],["Фізична",1.6,"фізична робота"]];
+const CARDIO=[["Немає",0],["Швидка ходьба",4],["Біг",9],["Велосипед",7],["Скакалка",10],["Плавання",7],["Інше кардіо",5]];
+const STR_MET=6;
+const SAMPLE={sex:"Чоловік",w:65,h:178,age:22,life:0,strN:4,strMin:60,cardio:0,cN:0,cMin:0,cur:0,trend:"Стоїть",trendKg:0,goal:"Набір маси",budget:"Економ",want:0};
 const PROD=Object.fromEntries(DATA.products.map(p=>[p.n,p]));
+const USED=[...new Set(Object.values(DATA.dishes).flatMap(d=>d.i.map(x=>x[0])))];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt=(n,d=0)=>Number(n).toLocaleString("uk-UA",{minimumFractionDigits:d,maximumFractionDigits:d});
+const r1=x=>Math.round(x*10)/10;
 
 /* ---- nutrition per 1 portion ---- */
 const DISH={};
@@ -146,42 +197,73 @@ for(const [name,d] of Object.entries(DATA.dishes)){
   DISH[name]={type:d.t,ma:!!d.ma,kc,p,f,c,cost,miss,tags:[...tags]};
 }
 
-/* ---- state & storage (Telegram CloudStorage → localStorage → memory) ---- */
-let S={profile:null,swaps:{},checked:{},tab:"menu",day:(new Date().getDay()+6)%7,tpl:""};
+/* ---- state & storage (Telegram CloudStorage → localStorage) ---- */
+let S={profile:null,swaps:{},checked:{},tab:"menu",day:(new Date().getDay()+6)%7,tpl:"",prefs:{excl:{},dis:{},noGl:false,noLac:false,noBob:false},seenIntro:false,introStep:0,firstPrefs:false};
 const TG=()=>window.Telegram&&window.Telegram.WebApp;
+const cloud=()=>{const t=TG();return t&&t.CloudStorage&&t.isVersionAtLeast&&t.isVersionAtLeast("6.9")?t.CloudStorage:null};
 const store={
-  get(k){return new Promise(res=>{const cs=TG()&&TG().CloudStorage;
-    if(cs&&TG().isVersionAtLeast&&TG().isVersionAtLeast("6.9")){cs.getItem(k,(e,v)=>res(e?null:v||null));return}
+  get(k){return new Promise(res=>{const cs=cloud();
+    if(cs){try{cs.getItem(k,(e,v)=>res(e?null:v||null))}catch(e){res(null)}return}
     try{res(localStorage.getItem(k))}catch(e){res(null)}})},
-  set(k,v){const cs=TG()&&TG().CloudStorage;
-    if(cs&&TG().isVersionAtLeast&&TG().isVersionAtLeast("6.9")){try{cs.setItem(k,v,()=>{})}catch(e){}return}
+  set(k,v){const cs=cloud();if(cs){try{cs.setItem(k,v,()=>{})}catch(e){}return}
     try{localStorage.setItem(k,v)}catch(e){}}
 };
-function save(){store.set("state",JSON.stringify({profile:S.profile,swaps:S.swaps,checked:S.checked,tpl:S.tpl}))}
+function save(){store.set("state",JSON.stringify({profile:S.profile,swaps:S.swaps,checked:S.checked,tpl:S.tpl,prefs:S.prefs,seenIntro:S.seenIntro}))}
+function migrate(p){if(!p)return null;if(p.life==null){const a=p.act??2;
+  Object.assign(p,{life:a===3?1:0,strN:[0,2,4,6][a]||0,strMin:60,cardio:0,cN:0,cMin:0,cur:0,trend:"Стоїть",trendKg:0,want:0})}
+  return Object.assign({},SAMPLE,p)}
 
-/* ---- calculator (same formulas as the spreadsheet) ---- */
+/* ---- calculator ---- */
 function calc(pf){
   const P=pf||SAMPLE;
   const bmr=Math.round(10*P.w+6.25*P.h-5*P.age+(P.sex==="Чоловік"?5:-161));
-  const tdee=Math.round(bmr*ACTS[P.act][1]);
-  const adj=P.goal==="Набір маси"?1.12:P.goal==="Рельєф"?0.85:1;
-  const kcal=Math.round(Math.max(tdee*adj,bmr)/50)*50;
+  const strW=(STR_MET-1)*P.w*P.strN*P.strMin/60;
+  const met=CARDIO[P.cardio]?CARDIO[P.cardio][1]:0;
+  const carW=met?(met-1)*P.w*P.cN*P.cMin/60:0;
+  const ex=Math.round((strW+carW)/7);
+  const fMaint=Math.round(bmr*LIFE[P.life][1]+ex);
+  let maint=fMaint,src="за формулою";
+  const warns=[];
+  if(P.cur>0){const d=P.trend==="Росте"?P.trendKg:P.trend==="Падає"?-P.trendKg:0;
+    maint=Math.round(P.cur-d*1100);src="з твого фактичного харчування";
+    const dev=maint/fMaint;
+    if(dev<.75||dev>1.25)warns.push(`Твоя фактична підтримка сильно відрізняється від розрахунку за формулою (${fmt(fMaint)} ккал). Перевір, чи точно рахуєш усе з'їдене, включно з олією й перекусами.`)}
+  const adj=P.goal==="Набір маси"?1.12:P.goal==="Рельєф"?.85:1;
+  const rec=Math.round(Math.max(maint*adj,bmr)/50)*50;
+  const own=P.want>0;const kcal=own?Math.round(P.want):rec;
+  const diff=kcal/maint-1;
+  if(own){
+    if(kcal<bmr)warns.push(`${fmt(kcal)} ккал — нижче базового обміну (${fmt(bmr)}). Так худнути не варто: йтимуть м'язи й сили. Рекомендовано: ${fmt(rec)} ккал.`);
+    else if(diff<-.25)warns.push(`Дефіцит ${Math.round(-diff*100)}% — занадто різко, важко втримати і шкода м'язам. Рекомендовано: ${fmt(rec)} ккал.`);
+    if(diff>.2)warns.push(`Профіцит ${Math.round(diff*100)}% — набиратимеш переважно жир. Рекомендовано: ${fmt(rec)} ккал.`);
+    if(P.goal==="Рельєф"&&diff>0)warns.push("Ціль — рельєф, але ця калорійність вища за підтримку, тож вага не йтиме вниз.");
+    if(P.goal==="Набір маси"&&diff<0)warns.push("Ціль — маса, але ця калорійність нижча за підтримку, тож набору не буде.");
+  }
   const prot=Math.round(Math.min(P.w*(P.goal==="Рельєф"?2:P.goal==="Набір маси"?1.8:1.6),220));
   const fat=Math.round(Math.max(.8*P.w,kcal*.25/9));
   const carb=Math.max(Math.round((kcal-prot*4-fat*9)/4),0);
   const bmi=Math.round(P.w/((P.h/100)**2)*10)/10;
-  let warn="";
-  if(P.age<18||P.w<40||P.h<140)warn="Розрахунок призначений для дорослих 18+ зі звичайними параметрами.";
-  else if(bmi<17)warn="ІМТ дуже низький. Перед зміною харчування порадься з лікарем.";
-  else if(P.goal==="Рельєф"&&bmi<20)warn="При такому ІМТ сушка не потрібна. Краще обрати «Підтримку» або «Набір маси».";
-  else if(bmi>=30)warn="При ІМТ 30+ план краще узгодити з лікарем.";
-  const pace=P.goal==="Набір маси"?"+0,25–0,5 кг на тиждень":P.goal==="Рельєф"?"−0,4–0,7 кг на тиждень":"вага ±0,5 кг";
-  return {bmr,tdee,kcal,prot,fat,carb,bmi,warn,pace};
+  if(P.age<18||P.w<40||P.h<140)warns.unshift("Розрахунок призначений для дорослих 18+ зі звичайними параметрами.");
+  else if(bmi<17)warns.unshift("ІМТ дуже низький. Перед зміною харчування порадься з лікарем.");
+  else if(P.goal==="Рельєф"&&bmi<20)warns.unshift("При такому ІМТ сушка не потрібна. Краще обрати «Підтримку» або «Набір маси».");
+  else if(bmi>=30)warns.unshift("При ІМТ 30+ план краще узгодити з лікарем.");
+  const rate=(kcal-maint)*7/7700;
+  const pace=Math.abs(rate)<.1?"вага стабільна":(rate>0?"+":"−")+fmt(Math.abs(rate),1)+" кг на тиждень";
+  return {bmr,ex,fMaint,maint,src,rec,kcal,own,diff,prot,fat,carb,bmi,warns,pace};
 }
 function tplName(){const P=S.profile||SAMPLE;if(S.tpl)return S.tpl;return (P.goal==="Рельєф"?"Рельєф":"Маса")+" · "+P.budget}
 function baseAvg(t){let s=0;for(const d of DAYS)for(const [,dish,por] of DATA.weeks[t][d]||[])s+=DISH[dish].kc*por;return s/7}
-function coef(){const t=tplName();const k=calc(S.profile).kcal/baseAvg(t);return Math.min(Math.max(Math.round(k*100)/100,.6),1.8)}
-const r1=x=>Math.round(x*10)/10;
+function coef(){const k=calc(S.profile).kcal/baseAvg(tplName());return Math.min(Math.max(Math.round(k*100)/100,.6),1.8)}
+
+/* ---- preferences: why a dish doesn't fit ---- */
+function conflict(name){const P=S.prefs;if(P.dis[name])return "не подобається";
+  const ex=DATA.dishes[name].i.map(x=>x[0]).filter(n=>P.excl[n]);if(ex.length)return "містить: "+ex.join(", ").toLowerCase();
+  const t=DISH[name].tags;
+  if(P.noGl&&(t.includes("Г")||t.includes("Г*")))return t.includes("Г")?"є глютен":"можливі сліди глютену";
+  if(P.noLac&&t.includes("Л"))return "є лактоза";
+  if(P.noBob&&t.includes("Б"))return "є бобові";
+  return ""}
+
 function dayMeals(di){
   const t=tplName(),k=coef(),day=DAYS[di];
   return (DATA.weeks[t][day]||[]).map(([time,dish,por],s)=>{
@@ -189,10 +271,11 @@ function dayMeals(di){
     let name=dish,portion=r1(por*k);
     if(sw&&DISH[sw]){name=sw;portion=r1(Math.min(Math.max(por*k*DISH[dish].kc/DISH[sw].kc,.5),2.5))}
     const D=DISH[name];
-    return {key,s,time,name,orig:dish,swapped:!!(sw&&DISH[sw]),portion,kc:D.kc*portion,p:D.p*portion,cost:D.cost*portion,miss:D.miss,tags:D.tags,type:D.type,ma:D.ma};
+    return {key,s,di,time,name,orig:dish,swapped:!!(sw&&DISH[sw]),portion,kc:D.kc*portion,p:D.p*portion,cost:D.cost*portion,miss:D.miss,tags:D.tags,type:D.type,ma:D.ma,bad:conflict(name)};
   });
 }
-function dayTot(di){const m=dayMeals(di);return {kc:m.reduce((a,x)=>a+x.kc,0),p:m.reduce((a,x)=>a+x.p,0),cost:m.reduce((a,x)=>a+x.cost,0),miss:m.some(x=>x.miss)}}
+function dayTot(di){const m=dayMeals(di);return {kc:m.reduce((a,x)=>a+x.kc,0),p:m.reduce((a,x)=>a+x.p,0),cost:m.reduce((a,x)=>a+x.cost,0),miss:m.some(x=>x.miss),bad:m.filter(x=>x.bad).length}}
+function badAll(){const r=[];for(let i=0;i<7;i++)for(const m of dayMeals(i))if(m.bad)r.push(m);return r}
 function need(days){const g={};for(const di of days)for(const m of dayMeals(di))for(const [pn,gr] of DATA.dishes[m.name].i)g[pn]=(g[pn]||0)+gr*m.portion;return g}
 
 /* ---- views ---- */
@@ -203,16 +286,17 @@ const ICON={
  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h3M18 12h3M6 8v8M18 8v8M9 10v4M15 10v4M9 12h6"/></svg>'};
 const TABS=[["menu","Меню"],["shop","Покупки"],["prep","Заготовка"],["me","Профіль"]];
 function renderTabs(){$("#tabs").innerHTML=TABS.map(([id,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===id}" data-tab="${id}">${ICON[id]}${l}</button>`).join("")}
-function banner(){return S.profile?"":`<div class="banner"><span>Це приклад для хлопця 65 кг на масі. Введи свої дані, і меню підлаштується.</span><button data-go="me">Ввести</button></div>`}
 function pctCls(v,lowOnly){return v<0.9?"lo":(!lowOnly&&v>1.1)?"hi":""}
 
 function viewMenu(){
-  const c=calc(S.profile),di=S.day,ms=dayMeals(di),T=dayTot(di);
-  const dots=DAYS.map((d,i)=>{const t=dayTot(i),r=t.kc/c.kcal;return `<button class="day" aria-pressed="${i===di}" data-day="${i}">${d}<i class="${r>=.9&&r<=1.1?"ok":"lo"}"></i></button>`}).join("");
+  const c=calc(S.profile),di=S.day,ms=dayMeals(di),T=dayTot(di),bad=badAll();
+  const dots=DAYS.map((d,i)=>{const t=dayTot(i),r=t.kc/c.kcal;return `<button class="day" aria-pressed="${i===di}" data-day="${i}">${d}<i class="${t.bad?"bad":r>=.9&&r<=1.1?"ok":"lo"}"></i></button>`}).join("");
   const kr=T.kc/c.kcal,pr=T.p/c.prot;
   let week=0;for(let i=0;i<7;i++)week+=dayTot(i).cost;
+  const top=bad.length?`<div class="banner w"><span>${bad.length} ${bad.length===1?"страва не підходить":"страв(и) не підходять"} під твої вподобання. Обери їм заміну.</span><button data-fix="1">Показати</button></div>`
+    :!S.profile?`<div class="banner"><span>Це приклад для хлопця 65 кг на масі. Введи свої дані, і меню підлаштується.</span><button data-go="me">Ввести</button></div>`:"";
   return `<header class="top"><div class="brand"><h1>Їж, щоб рости</h1><small>${esc(tplName())}<br>порції ×${fmt(coef(),2)}</small></div><div class="days">${dots}</div></header>
-  ${banner()}
+  ${top}
   <section class="sum" aria-label="Підсумок дня">
     <div class="meters">
       <div class="meter"><div class="lbl"><span>Калорії</span><span class="num">${Math.round(kr*100)}%</span></div><div class="val num">${fmt(T.kc)} <span>/ ${fmt(c.kcal)}</span></div><div class="bar"><b class="${pctCls(kr)}" style="width:${Math.min(kr,1)*100}%"></b></div></div>
@@ -220,35 +304,37 @@ function viewMenu(){
     </div>
     <div class="cost"><span>Вартість дня${T.miss?" (без арахісової пасти)":""}</span><strong class="num">${fmt(T.cost)} грн</strong></div>
   </section>
-  <div class="list">${ms.map(m=>`<button class="meal" data-meal="${m.s}">
+  <div class="list">${ms.map(m=>`<button class="meal ${m.bad?"bad":""}" data-meal="${m.s}">
      <span class="t num">${esc(m.time)}</span>
-     <span><span class="n">${esc(m.name)}</span><div class="m num">${fmt(m.kc)} ккал · ${fmt(m.p)} г білка · ${fmt(m.cost)} грн</div>
-       <div class="chips">${m.swapped?'<span class="chip sw">замінено</span>':""}${m.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</div></span>
+     <span style="min-width:0"><span class="n">${esc(m.name)}</span><div class="m num">${fmt(m.kc)} ккал · ${fmt(m.p)} г білка · ${fmt(m.cost)} грн</div>
+       <div class="chips">${m.bad?`<span class="chip bad">заміни: ${esc(m.bad)}</span>`:""}${m.swapped?'<span class="chip sw">замінено</span>':""}${m.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</div></span>
      <span class="x num">×${fmt(m.portion,1)}</span></button>`).join("")}</div>
   <div class="foot"><span>Тиждень: <b class="num">${fmt(week)} грн</b>, у середньому <b class="num">${fmt(week/7)} грн</b> на день.</span><span>Торкнись страви, щоб побачити продукти або замінити її. Мітки: Г — глютен, Г* — можливі сліди, Л — лактоза, Б — бобові.</span></div>`;
 }
 
 function viewShop(){
-  const g=need([0,1,2,3,4,5,6]);let pay=0,eat=0,miss=0;const cats={};
+  const g=need([0,1,2,3,4,5,6]);let pay=0,eat=0,miss=0;const cats={};const nb=badAll().length;
   for(const p of DATA.products){const gr=g[p.n];if(!gr)continue;
     let q,u,cst=null;
     if(p.pack==="ваговий"){q=Math.ceil(gr/100)/10;u="кг";cst=q*p.kg}
     else if(p.pr&&p.w){q=Math.ceil(gr/p.w);u="уп. · "+p.pack;cst=q*p.pr}
     else{q=Math.round(gr);u="г";miss++}
     if(cst!=null)pay+=cst;if(p.kg)eat+=gr*p.kg/1000;
-    (cats[p.cat]=cats[p.cat]||[]).push({n:p.n,q,u,cst,gr})}
+    (cats[p.cat]=cats[p.cat]||[]).push({n:p.n,q,u,cst})}
   const all=Object.values(cats).flat(),done=all.filter(x=>S.checked[x.n]).length;
   return `<header class="top"><div class="brand"><h1>Покупки</h1><small class="num">куплено ${done} з ${all.length}</small></div></header>
+  ${nb?`<div class="banner w"><span>Спершу заміни ${nb} ${nb===1?"страву":"страв(и)"} в меню, інакше тут будуть продукти, які ти не їси.</span><button data-fix="1">До меню</button></div>`:""}
   <div class="card kv"><div><span>До сплати</span><strong class="num">${fmt(pay)} ₴</strong></div><div><span>З'їдається</span><strong class="num">${fmt(eat)} ₴</strong></div><div><span>У запасі</span><strong class="num">${fmt(pay-eat)} ₴</strong></div></div>
-  <p class="note">Пачки більші за тижневу потребу, тож решта гречки, олії чи вівсянки переходить на наступний тиждень.${miss?` Без ціни: ${miss} прод., вони не входять у суму.`:""} Спеції не враховано.</p>
-  <div class="sec">${Object.entries(cats).map(([c,its])=>`<div class="grp">${esc(c)}</div><div class="rows" style="gap:6px">${its.map(x=>`<button class="item ${S.checked[x.n]?"done":""}" data-chk="${esc(x.n)}" aria-pressed="${!!S.checked[x.n]}"><span class="box">${S.checked[x.n]?"✓":""}</span><span class="nm">${esc(x.n)}<div class="q num">${fmt(x.q,x.u==="кг"?1:0)} ${esc(x.u)}</div></span><span class="pr num">${x.cst!=null?fmt(x.cst)+" ₴":"—"}</span></button>`).join("")}</div>`).join("")}</div>
+  <p class="note" style="margin-top:8px">Пачки більші за тижневу потребу, тож решта гречки, олії чи вівсянки переходить на наступний тиждень.${miss?` Без ціни: ${miss} прод., вони не входять у суму.`:""} Спеції не враховано.</p>
+  <div class="sec">${Object.entries(cats).map(([c,its])=>`<div class="grp">${esc(c)}</div><div class="rows">${its.map(x=>`<button class="item ${S.checked[x.n]?"done":""}" data-chk="${esc(x.n)}" aria-pressed="${!!S.checked[x.n]}"><span class="box">${S.checked[x.n]?"✓":""}</span><span class="nm">${esc(x.n)}<div class="q num">${fmt(x.q,x.u==="кг"?1:0)} ${esc(x.u)}</div></span><span class="pr num">${x.cst!=null?fmt(x.cst)+" ₴":"—"}</span></button>`).join("")}</div>`).join("")}</div>
   <div class="sec" id="reset">${done?`<button class="btn ghost" data-reset="ask">Зняти всі галочки</button>`:""}</div>`;
 }
 
 function viewPrep(){
-  const dishes={};for(const di of [0,1])for(const m of dayMeals(di))if(m.ma)dishes[m.name]=(dishes[m.name]||0)+m.portion;
-  const g={};for(const di of [0,1])for(const m of dayMeals(di))if(m.ma)for(const [pn,gr] of DATA.dishes[m.name].i)g[pn]=(g[pn]||0)+gr*m.portion;
-  const fresh=[];for(const di of [0,1])for(const m of dayMeals(di))if(!m.ma&&!fresh.includes(m.name))fresh.push(m.name);
+  const dishes={},g={},fresh=[];
+  for(const di of [0,1])for(const m of dayMeals(di)){
+    if(m.ma){dishes[m.name]=(dishes[m.name]||0)+m.portion;for(const [pn,gr] of DATA.dishes[m.name].i)g[pn]=(g[pn]||0)+gr*m.portion}
+    else if(!fresh.includes(m.name))fresh.push(m.name)}
   return `<header class="top"><div class="brand"><h1>Заготовка</h1><small>неділя · ~1,5 год<br>їжа на Пн–Вт</small></div></header>
   <div class="sec"><div class="h2">Що готуємо</div><div class="card rows">${Object.entries(dishes).map(([n,p])=>`<div class="row"><span>${esc(n)}</span><span class="num">${Math.ceil(p-0.05)} конт.</span></div>`).join("")||'<div class="row"><span>На Пн–Вт немає страв для заготовки</span></div>'}</div></div>
   <div class="sec"><div class="h2">Скільки продуктів взяти</div><div class="card rows">${Object.entries(g).sort((a,b)=>b[1]-a[1]).map(([n,gr])=>`<div class="row"><span>${esc(n)}</span><span class="num">${fmt(Math.round(gr/10)*10)} г</span></div>`).join("")}</div><p class="note">Вага вказана як купується: з кістками та шкіркою.${fresh.length?" Свіжими в ці дні: "+fresh.map(esc).join(", ")+".":""}</p></div>
@@ -266,63 +352,141 @@ function viewPrep(){
 }
 
 function seg(id,opts,val){return `<div class="seg" role="group" id="${id}">${opts.map(o=>`<button type="button" data-seg="${id}" data-v="${esc(o)}" aria-pressed="${o===val}">${esc(o)}</button>`).join("")}</div>`}
+const nv=v=>v>0?v:"";
+const TIPS=[
+ ["Як користуватися",`<p>1. У «Профілі» введи свої дані й ціль. Меню на тиждень підбереться саме, а порції підженуться під твої калорії.</p><p>2. У «Меню» торкнись страви, щоб побачити продукти в грамах або замінити її на іншу з тією ж калорійністю.</p><p>3. «Покупки» — список на тиждень з галочками. «Заготовка» — що приготувати в неділю на понеділок і вівторок.</p><p>4. Не їси якийсь продукт — познач у «Профілі» → «Що не їм». Страви з ним підсвітяться, і ти обереш їм заміну.</p>`],
+ ["Як зважуватись і коригувати калорії",`<p>Зважуйся 1–2 рази на тиждень зранку, після туалету й до їжі. Дивись на середнє за 2 тижні: вага щодня скаче на 0,5–1 кг через воду й сіль.</p><p>Маса: якщо за 2 тижні вага не росте — додай 150–200 ккал у полі «Хочу їсти». Росте швидше за 0,5 кг на тиждень — забери 150.</p><p>Рельєф: якщо за 2 тижні вага стоїть — мінус 150–200 ккал. Падає швидше за 1% від ваги на тиждень — додай 150.</p>`],
+ ["Дні тренувань і відпочинку",`<p>Витрата від тренувань і кардіо рахується як середнє на день, тому меню однакове щодня.</p><p>Реально в дні тренувань ти витрачаєш більше, а в дні відпочинку менше. Це нормально: за тиждень усе вирівнюється.</p><p>Якщо в день довгого кардіо сильно голодний — додай перекус. У день відпочинку можна пропустити перекус, якщо не хочеться їсти.</p>`],
+ ["Як працює заготовка",`<p>Готова їжа в холодильнику безпечно стоїть до 3 діб, тому неділя покриває лише понеділок і вівторок.</p><p>У середу ввечері — друга коротка заготовка на четвер і п'ятницю. Вихідні — готуєш свіже.</p><p>Хочеш один раз на тиждень — порції на Чт–Пт одразу клади в морозилку, а ввечері перед днем перекладай у холодильник.</p>`],
+ ["Креатин і протеїн",`<p><b>Протеїн</b> — це просто зручна форма білка, а не обов'язкова добавка. Якщо білок у меню набирається з їжі, він не потрібен. Порівнюй ціну 100 г білка з куркою, яйцями чи сиром.</p><p><b>Креатин моногідрат</b> — одна з найдосліджених добавок для силових тренувань. У дослідженнях зазвичай беруть 3–5 г на день щодня і п'ють достатньо води. Без «завантаження» він теж працює, просто трохи повільніше.</p><p>Якщо є проблеми з нирками чи ти приймаєш ліки — перед будь-якими добавками порадься з лікарем.</p>`],
+ ["Коли звернутися до лікаря",`<p>Постійне здуття, біль у животі чи розлади після певних продуктів. Різке схуднення без причини. Запаморочення, слабкість, перебої в роботі серця на тренуваннях.</p><p>А також якщо ловиш себе на тому, що їжа чи вага стали постійним джерелом тривоги. Додаток допомагає планувати харчування, але не замінює лікаря.</p>`]];
 function viewMe(){
-  const P=S.profile||SAMPLE,c=calc(P);
+  const P=S.profile||SAMPLE,c=calc(P),np=Object.keys(S.prefs.excl).length+Object.keys(S.prefs.dis).length+(S.prefs.noGl+S.prefs.noLac+S.prefs.noBob);
   return `<header class="top"><div class="brand"><h1>Профіль</h1><small>${S.profile?"твої дані":"приклад — зміни під себе"}</small></div></header>
   <form class="form card" id="pf" novalidate>
-    <div class="fld"><label>Стать</label>${seg("sex",["Чоловік","Жінка"],P.sex)}</div>
-    <div class="trio">
-      <div class="fld"><label for="w">Вага, кг</label><input id="w" type="number" inputmode="decimal" min="40" max="200" step="0.1" value="${P.w}"></div>
-      <div class="fld"><label for="h">Зріст, см</label><input id="h" type="number" inputmode="numeric" min="140" max="220" value="${P.h}"></div>
-      <div class="fld"><label for="age">Вік</label><input id="age" type="number" inputmode="numeric" min="18" max="80" value="${P.age}"></div></div>
-    <div class="fld"><label for="act">Активність</label><select id="act">${ACTS.map((a,i)=>`<option value="${i}" ${i==P.act?"selected":""}>${a[0]}</option>`).join("")}</select></div>
-    <div class="fld"><label>Ціль</label>${seg("goal",["Набір маси","Рельєф","Підтримка"],P.goal)}</div>
-    <div class="fld"><label>Бюджет</label>${seg("budget",["Економ","Стандарт"],P.budget)}</div>
+    <fieldset class="fs"><legend>Про тебе</legend>
+      <div class="fld"><span class="lb">Стать</span>${seg("sex",["Чоловік","Жінка"],P.sex)}</div>
+      <div class="trio">
+        <div class="fld"><label for="w">Вага, кг</label><input id="w" type="number" inputmode="decimal" min="40" max="200" step="0.1" value="${P.w}"></div>
+        <div class="fld"><label for="h">Зріст, см</label><input id="h" type="number" inputmode="numeric" min="140" max="220" value="${P.h}"></div>
+        <div class="fld"><label for="age">Вік</label><input id="age" type="number" inputmode="numeric" min="18" max="80" value="${P.age}"></div></div>
+    </fieldset>
+    <fieldset class="fs"><legend>Активність</legend>
+      <div class="fld"><span class="lb">Протягом дня</span>${seg("life",LIFE.map(x=>x[0]),LIFE[P.life][0])}<p class="hint">${LIFE.map(x=>x[0]+" — "+x[2]).join("; ")}.</p></div>
+      <div class="duo">
+        <div class="fld"><label for="strN">Силові, разів на тиждень</label><input id="strN" type="number" inputmode="numeric" min="0" max="14" value="${P.strN}"></div>
+        <div class="fld"><label for="strMin">Хвилин за раз</label><input id="strMin" type="number" inputmode="numeric" min="0" max="240" value="${P.strMin}"></div></div>
+      <div class="fld"><label for="cardio">Кардіо</label><select id="cardio">${CARDIO.map((x,i)=>`<option value="${i}" ${i==P.cardio?"selected":""}>${x[0]}</option>`).join("")}</select></div>
+      <div class="duo">
+        <div class="fld"><label for="cN">Кардіо, разів на тиждень</label><input id="cN" type="number" inputmode="numeric" min="0" max="14" value="${nv(P.cN)}" placeholder="0"></div>
+        <div class="fld"><label for="cMin">Хвилин за раз</label><input id="cMin" type="number" inputmode="numeric" min="0" max="300" value="${nv(P.cMin)}" placeholder="0"></div></div>
+      <p class="hint">Тренування й кардіо рахуються як середнє на день. У дні відпочинку ти витрачаєш менше, у дні тренувань — більше, і за тиждень це вирівнюється.</p>
+    </fieldset>
+    <fieldset class="fs"><legend>Як їси зараз <span class="hint" style="font-family:var(--f-body)">· необов'язково</span></legend>
+      <div class="fld"><label for="cur">Скільки ккал їм зараз на день</label><input id="cur" type="number" inputmode="numeric" min="0" max="7000" value="${nv(P.cur)}" placeholder="не знаю — порахувати за формулою"></div>
+      <div class="fld"><span class="lb">Вага за останні 2–3 тижні</span>${seg("trend",["Стоїть","Росте","Падає"],P.trend)}</div>
+      <div class="fld"><label for="trendKg">Якщо змінюється — на скільки кг на тиждень</label><input id="trendKg" type="number" inputmode="decimal" min="0" max="2" step="0.1" value="${nv(P.trendKg)}" placeholder="0,3"></div>
+      <p class="hint">Якщо знаєш, скільки їси, це точніше за будь-яку формулу. Твою реальну підтримку порахуємо саме з цього.</p>
+    </fieldset>
+    <fieldset class="fs"><legend>Ціль</legend>
+      ${seg("goal",["Набір маси","Рельєф","Підтримка"],P.goal)}
+      <div class="fld"><span class="lb">Бюджет</span>${seg("budget",["Економ","Стандарт"],P.budget)}</div>
+      <div class="fld"><label for="want">Хочу їсти, ккал на день</label><input id="want" type="number" inputmode="numeric" min="0" max="7000" value="${nv(P.want)}" placeholder="рекомендація: ${fmt(c.rec)}"></div>
+      <p class="hint">Залиш порожнім — візьмемо рекомендацію.</p>
+    </fieldset>
     <button class="btn" type="submit">Зберегти й оновити меню</button>
   </form>
   <div class="sec"><div class="h2">Твоя ціль на день</div><div class="card" style="display:grid;gap:12px">
-    <div style="display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap"><div><div class="note">Калорії</div><div class="big num">${fmt(c.kcal)}</div></div><div style="text-align:right"><div class="note">Темп</div><b>${c.pace}</b></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap"><div><div class="note">${c.own?"Твоя калорійність":"Рекомендовано"}</div><div class="big num">${fmt(c.kcal)}</div></div><div style="text-align:right"><div class="note">Очікуваний темп</div><b class="num">${c.pace}</b></div></div>
     <div class="kv"><div><span>Білок</span><strong class="num">${c.prot} г</strong></div><div><span>Жири</span><strong class="num">${c.fat} г</strong></div><div><span>Вуглеводи</span><strong class="num">${c.carb} г</strong></div></div>
-    <div class="rows"><div class="row"><span>Базовий обмін</span><span class="num">${fmt(c.bmr)} ккал</span></div><div class="row"><span>Витрата з активністю</span><span class="num">${fmt(c.tdee)} ккал</span></div><div class="row"><span>Індекс маси тіла</span><span class="num">${fmt(c.bmi,1)}</span></div></div>
-    ${c.warn?`<div class="warn">${c.warn}</div>`:`<div class="okmsg">Усе в межах норми. Зважуйся 1–2 рази на тиждень зранку.</div>`}
+    <div class="rows">
+      <div class="row"><span>Підтримка (вага стоїть)<br><small class="note">${c.src}</small></span><span class="num">${fmt(c.maint)} ккал</span></div>
+      <div class="row"><span>${c.diff>=0?"Профіцит":"Дефіцит"} від підтримки</span><span class="num">${c.diff>=0?"+":"−"}${fmt(Math.abs(c.kcal-c.maint))} ккал · ${Math.round(Math.abs(c.diff)*100)}%</span></div>
+      <div class="row"><span>Базовий обмін</span><span class="num">${fmt(c.bmr)} ккал</span></div>
+      <div class="row"><span>Тренування й кардіо, в середньому</span><span class="num">${fmt(c.ex)} ккал/день</span></div>
+      <div class="row"><span>Індекс маси тіла</span><span class="num">${fmt(c.bmi,1)}</span></div></div>
+    ${c.warns.length?c.warns.map(w=>`<div class="warn">${w}</div>`).join(""):`<div class="okmsg">Усе в межах норми. Зважуйся 1–2 рази на тиждень зранку.</div>`}
   </div></div>
+  <div class="sec"><div class="h2">Що не їм</div><button class="btn ghost" data-prefs="1" style="text-align:left;display:flex;justify-content:space-between"><span>Продукти, страви, глютен, лактоза</span><b>${np?np+" обрано":"налаштувати"}</b></button></div>
   <div class="sec"><div class="h2">Готовий тиждень</div><div class="card fld"><label for="tpl">Обирається з цілі й бюджету</label><select id="tpl"><option value="">Автоматично (${esc((P.goal==="Рельєф"?"Рельєф":"Маса")+" · "+P.budget)})</option>${Object.keys(DATA.weeks).map(t=>`<option ${t===S.tpl?"selected":""}>${esc(t)}</option>`).join("")}</select></div></div>
-  <p class="note" style="margin-top:14px">Це орієнтир для здорових дорослих 18+, а не медична порада. Якщо є хронічні хвороби, проблеми з травленням чи ти приймаєш ліки, спершу порадься з лікарем. Ціни: ${esc(DATA.priceDate)}, без акцій.</p>`;
+  <div class="sec"><div class="h2">Поради</div>${TIPS.map(([t,b])=>`<details class="tip"><summary>${t}</summary><div>${b}</div></details>`).join("")}</div>
+  <p class="note" style="margin-top:16px">Це орієнтир для здорових дорослих 18+, а не медична порада. Якщо є хронічні хвороби, проблеми з травленням чи ти приймаєш ліки, спершу порадься з лікарем. Витрата на тренуваннях порахована за усередненими коефіцієнтами навантаження. Ціни: ${esc(DATA.priceDate)}, без акцій.</p>`;
 }
 
 function render(){
   renderTabs();
   $("#app").innerHTML={menu:viewMenu,shop:viewShop,prep:viewPrep,me:viewMe}[S.tab]();
-  if(TG())try{TG().BackButton.hide()}catch(e){}
+  renderIntro();
 }
 
-/* ---- meal sheet ---- */
-function openMeal(s){
+/* ---- intro ---- */
+const INTRO=[
+ ["Меню під твою ціль","Маса чи рельєф — додаток підбирає готовий тиждень і підганяє порції саме під твої калорії.",["Звичайна домашня їжа з будь-якого супермаркету","Ціни в гривнях: видно, скільки коштує кожен день"]],
+ ["Не подобається — заміни","Торкнись страви, і побачиш продукти в грамах та варіанти заміни з тією ж калорійністю.",["Список покупок збирається сам","Заготовка в неділю: ~1,5 години, і їжа на 2 дні готова"]],
+ ["Почнімо","Введи вагу, зріст, активність і ціль. Це займе хвилину. Якщо знаєш, скільки зараз їси, — вкажи, так розрахунок буде точнішим.",["Потім познач продукти, які не їси","Усе можна змінити пізніше в «Профілі»"]]];
+function renderIntro(){
+  const el=$("#intro");
+  if(S.seenIntro||S.profile){el.innerHTML="";return}
+  const i=S.introStep,[h,p,li]=INTRO[i],last=i===INTRO.length-1;
+  el.innerHTML=`<div class="intro" role="dialog" aria-label="Знайомство"><div><div class="step">Крок ${i+1} / ${INTRO.length}</div><h2>${h}</h2><p>${p}</p><ul>${li.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+   <div><div class="dots">${INTRO.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("")}</div>
+   <div class="split"><button class="btn ghost" data-intro="skip">${last?"Подивитися приклад":"Пропустити"}</button><button class="btn" data-intro="${last?"start":"next"}">${last?"Ввести дані":"Далі"}</button></div></div></div>`;
+}
+
+/* ---- sheets ---- */
+function openMeal(s,di){
+  if(di!=null)S.day=di;
   const m=dayMeals(S.day).find(x=>x.s==s);if(!m)return;
-  const ing=DATA.dishes[m.name].i.map(([pn,g])=>`<div class="row"><span>${esc(pn)}</span><span class="num">${fmt(Math.round(g*m.portion/5)*5)} г</span></div>`).join("");
-  const target=m.kc;
-  const alts=Object.entries(DISH).filter(([n,d])=>n!==m.name&&(d.type===DISH[m.orig].type)).map(([n,d])=>{const por=r1(Math.min(Math.max(target/d.kc,.5),2.5));return {n,por,p:d.p*por,cost:d.cost*por}}).sort((a,b)=>Math.abs(a.por-1)-Math.abs(b.por-1)||b.p-a.p);
+  const ing=DATA.dishes[m.name].i.map(([pn,g])=>`<div class="row"><span>${esc(pn)}${S.prefs.excl[pn]?' <b style="color:var(--warn)">· не їм</b>':""}</span><span class="num">${fmt(Math.round(g*m.portion/5)*5)} г</span></div>`).join("");
+  const alts=Object.entries(DISH).filter(([n,d])=>n!==m.name&&d.type===DISH[m.orig].type&&!conflict(n)).map(([n,d])=>{const por=r1(Math.min(Math.max(m.kc/d.kc,.5),2.5));return {n,por,p:d.p*por,cost:d.cost*por}}).sort((a,b)=>Math.abs(a.por-1)-Math.abs(b.por-1)||b.p-a.p);
+  const dis=!!S.prefs.dis[m.name];
   $("#layer").innerHTML=`<div class="scrim" data-close="1"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(m.name)}"><div class="in">
     <div class="grab"></div><h3>${esc(m.name)}</h3>
+    ${m.bad?`<div class="warn">Ця страва тобі не підходить (${esc(m.bad)}). Обери заміну нижче.</div>`:""}
     <div class="kv card"><div><span>Порція</span><strong class="num">×${fmt(m.portion,1)}</strong></div><div><span>Ккал</span><strong class="num">${fmt(m.kc)}</strong></div><div><span>Білок</span><strong class="num">${fmt(m.p)} г</strong></div></div>
     <div><div class="grp">Продукти на цю порцію</div><div class="card rows">${ing}</div></div>
     ${m.swapped?`<button class="btn ghost" data-unswap="${esc(m.key)}">Повернути страву з плану: ${esc(m.orig)}</button>`:""}
-    <div><div class="grp">Замінити на (калорії лишаться ті самі)</div><div class="rows">${alts.map(a=>`<button class="alt" data-swap="${esc(m.key)}" data-to="${esc(a.n)}"><span class="a">${esc(a.n)}</span><span class="b num">×${fmt(a.por,1)} · ${fmt(a.p)} г білка<br>${fmt(a.cost)} грн</span></button>`).join("")}</div></div>
+    <div><div class="grp">Замінити на (калорії лишаться ті самі)</div><div class="rows">${alts.length?alts.map(a=>`<button class="alt" data-swap="${esc(m.key)}" data-to="${esc(a.n)}"><span class="a">${esc(a.n)}</span><span class="b num">×${fmt(a.por,1)} · ${fmt(a.p)} г білка<br>${fmt(a.cost)} грн</span></button>`).join(""):'<div class="info">Немає варіантів, які тобі підходять. Зміни список «Що не їм» у Профілі.</div>'}</div></div>
+    <button class="btn ghost" data-${dis?"undis":"dis"}="${esc(m.name)}" data-reopen="${m.s}">${dis?"Прибрати з «не подобається»":"Не подобається ця страва"}</button>
     <button class="btn ghost" data-close="1">Закрити</button></div></div>`;
-  if(TG())try{TG().BackButton.show()}catch(e){}
+  tgBack(true);
 }
-function closeSheet(){$("#layer").innerHTML="";if(TG())try{TG().BackButton.hide()}catch(e){}}
+function openPrefs(first){
+  const P=S.prefs,cats={};
+  for(const p of DATA.products)if(USED.includes(p.n))(cats[p.cat]=cats[p.cat]||[]).push(p.n);
+  const dl=Object.keys(P.dis);
+  $("#layer").innerHTML=`<div class="scrim" data-close="1"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Що не їм"><div class="in">
+    <div class="grab"></div><h3>Що не їм</h3>
+    ${first?`<div class="info">Останній крок. Познач, що не їси, і ми підсвітимо страви, які треба замінити. Можна пропустити.</div>`:`<p class="note">Страви з позначеним підсвітяться в меню червоним, і ти сам обереш їм заміну.</p>`}
+    <div class="tog">${[["noGl","Без глютену"],["noLac","Без лактози"],["noBob","Без бобових"]].map(([k,l])=>`<button data-flt="${k}" aria-pressed="${!!P[k]}">${l}</button>`).join("")}</div>
+    ${dl.length?`<div><div class="grp">Не подобаються страви</div><div class="rows">${dl.map(n=>`<button class="item ex" data-undis="${esc(n)}"><span class="box">×</span><span class="nm">${esc(n)}</span><span class="q">повернути</span></button>`).join("")}</div></div>`:""}
+    ${Object.entries(cats).map(([c,its])=>`<div><div class="grp">${esc(c)}</div><div class="rows">${its.map(n=>`<button class="item ${P.excl[n]?"ex":""}" data-ex="${esc(n)}" aria-pressed="${!!P.excl[n]}"><span class="box">${P.excl[n]?"×":""}</span><span class="nm">${esc(n)}</span><span></span></button>`).join("")}</div></div>`).join("")}
+    <button class="btn" data-close="1">Готово</button></div></div>`;
+  tgBack(true);
+}
+function closeSheet(){$("#layer").innerHTML="";tgBack(false)}
+function tgBack(on){if(TG())try{on?TG().BackButton.show():TG().BackButton.hide()}catch(e){}}
+function fixNext(){const b=badAll()[0];S.tab="menu";if(b){S.day=b.di;render();openMeal(b.s,b.di)}else render()}
 
 /* ---- events ---- */
 document.addEventListener("click",e=>{
   const b=e.target.closest("button,[data-close]");if(!b)return;const d=b.dataset;
   if(d.tab){S.tab=d.tab;closeSheet();render();window.scrollTo(0,0);return}
   if(d.go){S.tab=d.go;render();window.scrollTo(0,0);return}
+  if(d.intro){if(d.intro==="next"){S.introStep++;renderIntro();return}
+    S.seenIntro=true;save();if(d.intro==="start"){S.tab="me";S.firstPrefs=true}render();window.scrollTo(0,0);return}
   if(d.day){S.day=+d.day;render();return}
   if(d.meal!==undefined){openMeal(d.meal);return}
-  if(d.close){closeSheet();return}
+  if(d.fix){closeSheet();fixNext();return}
+  if(d.close){closeSheet();if(S.tab!=="me")render();else render();return}
+  if(d.prefs){openPrefs(false);return}
   if(d.swap){S.swaps[d.swap]=d.to;save();closeSheet();render();haptic();return}
   if(d.unswap){delete S.swaps[d.unswap];save();closeSheet();render();return}
+  if(d.dis){S.prefs.dis[d.dis]=true;save();render();openMeal(d.reopen);haptic();return}
+  if(d.undis){delete S.prefs.dis[d.undis];save();render();if(d.reopen!=null)openMeal(d.reopen);else b.remove();return}
+  if(d.flt){S.prefs[d.flt]=!S.prefs[d.flt];b.setAttribute("aria-pressed",S.prefs[d.flt]);save();render();haptic();return}
+  if(d.ex){const n=d.ex;if(S.prefs.excl[n])delete S.prefs.excl[n];else S.prefs.excl[n]=true;
+    const on=!!S.prefs.excl[n];b.classList.toggle("ex",on);b.setAttribute("aria-pressed",on);b.querySelector(".box").textContent=on?"×":"";save();render();haptic();return}
   if(d.chk){S.checked[d.chk]=!S.checked[d.chk];if(!S.checked[d.chk])delete S.checked[d.chk];save();render();haptic();return}
   if(d.reset==="ask"){$("#reset").innerHTML=`<div class="split"><button class="btn ghost" data-reset="no">Скасувати</button><button class="btn danger" data-reset="yes">Так, зняти</button></div>`;return}
   if(d.reset==="yes"){S.checked={};save();render();return}
@@ -332,27 +496,46 @@ document.addEventListener("click",e=>{
 document.addEventListener("change",e=>{if(e.target.id==="tpl"){S.tpl=e.target.value;save();render()}});
 document.addEventListener("submit",e=>{
   if(e.target.id!=="pf")return;e.preventDefault();
+  if(document.activeElement)document.activeElement.blur();
   const segv=id=>document.querySelector(`#${id} [aria-pressed="true"]`).dataset.v;
-  const num=(id,lo,hi)=>{const v=parseFloat($("#"+id).value);return isFinite(v)?Math.min(Math.max(v,lo),hi):null};
-  const w=num("w",40,200),h=num("h",140,220),age=num("age",18,80);
-  if(w==null||h==null||age==null)return;
-  S.profile={sex:segv("sex"),w,h,age:Math.round(age),act:+$("#act").value,goal:segv("goal"),budget:segv("budget")};
-  save();S.tab="menu";render();window.scrollTo(0,0);haptic();
+  const num=(id,lo,hi,def)=>{const v=parseFloat(String($("#"+id).value).replace(",","."));return isFinite(v)?Math.min(Math.max(v,lo),hi):def};
+  const first=!S.profile;
+  S.profile={sex:segv("sex"),w:num("w",40,200,65),h:num("h",140,220,178),age:Math.round(num("age",18,80,22)),
+    life:LIFE.findIndex(x=>x[0]===segv("life")),strN:num("strN",0,14,0),strMin:num("strMin",0,240,0),
+    cardio:+$("#cardio").value,cN:num("cN",0,14,0),cMin:num("cMin",0,300,0),
+    cur:num("cur",0,7000,0),trend:segv("trend"),trendKg:num("trendKg",0,2,0),
+    goal:segv("goal"),budget:segv("budget"),want:num("want",0,7000,0)};
+  if(S.profile.cur>0&&S.profile.cur<800)S.profile.cur=0;
+  if(S.profile.want>0&&S.profile.want<800)S.profile.want=0;
+  S.seenIntro=true;save();haptic();
+  if(first||S.firstPrefs){S.firstPrefs=false;S.tab="menu";render();window.scrollTo(0,0);openPrefs(true);return}
+  S.tab="menu";render();window.scrollTo(0,0);
 });
+document.addEventListener("focusin",e=>{if(e.target.matches("input,select"))document.body.classList.add("typing")});
+document.addEventListener("focusout",e=>{if(e.target.matches("input,select"))setTimeout(()=>{if(!document.activeElement||!document.activeElement.matches("input,select"))document.body.classList.remove("typing")},50)});
 function haptic(){if(TG())try{TG().HapticFeedback.impactOccurred("light")}catch(e){}}
 
 /* ---- boot ---- */
 async function boot(){
-  try{const raw=await store.get("state");if(raw){const v=JSON.parse(raw);Object.assign(S,{profile:v.profile||null,swaps:v.swaps||{},checked:v.checked||{},tpl:v.tpl||""})}}catch(e){}
+  try{const raw=await store.get("state");if(raw){const v=JSON.parse(raw);
+    Object.assign(S,{profile:migrate(v.profile),swaps:v.swaps||{},checked:v.checked||{},tpl:v.tpl||"",seenIntro:!!v.seenIntro||!!v.profile,
+      prefs:Object.assign({excl:{},dis:{},noGl:false,noLac:false,noBob:false},v.prefs||{})})}}catch(e){}
   render();
 }
-function initTG(){const t=TG();if(!t)return;
-  try{t.ready();t.expand();document.documentElement.dataset.theme=t.colorScheme==="dark"?"dark":"light";
-    t.onEvent("themeChanged",()=>{document.documentElement.dataset.theme=t.colorScheme==="dark"?"dark":"light"});
+function setTheme(t){document.documentElement.dataset.theme=t.colorScheme==="dark"?"dark":"light";
+  try{const bg=getComputedStyle(document.body).backgroundColor;t.setHeaderColor&&t.setHeaderColor(bg);t.setBackgroundColor&&t.setBackgroundColor(bg)}catch(e){}}
+function initTG(){const t=TG();if(!t||!t.initData)return;
+  try{t.ready();t.expand();setTheme(t);
+    if(t.isVersionAtLeast&&t.isVersionAtLeast("7.7")&&t.disableVerticalSwipes)t.disableVerticalSwipes();
+    t.onEvent("themeChanged",()=>setTheme(t));
     t.BackButton.onClick(closeSheet);}catch(e){}}
 render();
-if(/tgWebApp/.test(location.hash)||/Telegram/i.test(navigator.userAgent)){
+if(TG()){initTG();boot()}
+else if(/tgWebApp/.test(location.hash)){
   const sc=document.createElement("script");sc.src="https://telegram.org/js/telegram-web-app.js";
   sc.onload=()=>{initTG();boot()};sc.onerror=boot;document.head.appendChild(sc);
 }else boot();
 </script>
+
+</body>
+</html>
