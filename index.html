@@ -453,7 +453,7 @@ const store={
   set(k,v){const cs=cloud();if(cs){try{cs.setItem(k,v,()=>{})}catch(e){}return}
     try{localStorage.setItem(k,v)}catch(e){}}
 };
-function save(){store.set("state",JSON.stringify({profile:S.profile,swaps:S.swaps,checked:S.checked,chkWk:S.chkWk,home:S.home,tpl:S.tpl,meals:S.meals,fav:S.fav,prefs:S.prefs,seenIntro:S.seenIntro,prepMode:S.prepMode}));
+function save(){store.set("state",JSON.stringify({profile:S.profile,swaps:S.swaps,checked:S.checked,chkWk:S.chkWk,home:S.home,shuffle:S.shuffle,tpl:S.tpl,meals:S.meals,fav:S.fav,prefs:S.prefs,seenIntro:S.seenIntro,prepMode:S.prepMode}));
   const keep=iso(new Date(Date.now()-14*864e5));for(const k of Object.keys(S.eaten))if(k<keep)delete S.eaten[k];
   store.set("log",JSON.stringify({w:S.weights.slice(-80),e:S.eaten}));store.set("custom",JSON.stringify(S.custom))}
 function migrate(p){if(!p)return null;if(p.life==null){const a=p.act??2;
@@ -499,6 +499,7 @@ function calc(pf){
   return {bmr,ex,fMaint,maint,src,rec,kcal,own,diff,prot,fat,carb,bmi,warns,pace};
 }
 function tplName(){const P=S.profile||SAMPLE;if(S.tpl)return S.tpl;return (P.goal==="Рельєф"?"Рельєф":"Маса")+" · "+P.budget}
+const planKey=()=>S.tpl?S.tpl:"auto:"+weekKey()+":"+shuffleN();
 
 /* ---- preferences: why a dish doesn't fit ---- */
 function conflict(name){const P=S.prefs;if(P.dis[name])return "не подобається";
@@ -554,10 +555,50 @@ const SLOTS={3:[["Сніданок","Сніданок",.30],["Обід","Осн�
 const FAVT=[["Сніданок","На сніданок"],["Основна","На обід і вечерю"],["Перекус","На перекус"]];
 const TYPEN={Сніданок:"Сніданки",Основна:"Основні страви",Перекус:"Перекуси"};
 const hasFav=()=>Object.values(S.fav).some(x=>x.length);
-const planName=()=>hasFav()?"Свій тиждень":tplName();
+const planName=()=>hasFav()?"Свій тиждень":S.tpl?S.tpl:"Різноманітне меню";
 function migSwaps(o){const r={};for(const [k,v] of Object.entries(o)){const p=k.split("|");r[p.length===3?[p[0],4,p[1],p[2]].join("|"):k]=v}return r}
 let PLAN=[];
-function buildPlan(){
+/* ---- automatic varied week ---- */
+const PGRP={"Куряче філе":"курка","Куряче стегно (з кісткою)":"курка","Куряча гомілка":"курка","Фарш курячий з філе":"курка","Індиче філе":"індичка",
+ "Фарш свино-яловичий":"свинина","Свинина (гуляш)":"свинина","Печінка яловича":"печінка",
+ "Хек тушка заморожений":"риба","Минтай тушка заморожений":"риба","Скумбрія атлантична заморожена":"риба","Фарш з хека «Veladis»":"риба","Хек / минтай заморожений":"риба",
+ "Тунець у розсолі «Повна Чаша»":"консерва","Скумбрія натуральна з олією, консерва «Своя Лінія»":"консерва","Оселедець філе-шматочки в олії «Своя лінія»":"консерва",
+ "Яйця С1 «Ситий двір»":"яйця","Квасоля відварена «Верес»":"бобові"};
+function pgroup(n){const D=DISH[n];let best="",bp=0;for(const [pn,g] of D.items){if(!pn)continue;const P=PROD[pn],pv=g*P.ed/100*P.p;if(pv>bp){bp=pv;best=pn}}
+  return PGRP[best]||(/Сир|Йогурт|Молоко|Протеїн|Кефір/.test(best)?"молочне":"інше")}
+const CAP={риба:3,консерва:2,печінка:1,свинина:2};
+const CARBG={"Гречка «Ситий двір»":"гречка","Рис круглий «Ситий двір»":"рис","Макарони пера «Повна Чаша»":"макарони","Картопля біла":"картопля","Булгур «Attuale»":"булгур","Кус-кус птітім «Trapeza»":"кус-кус","Вівсяні пластівці «Премія»":"вівсянка"};
+function cgroup(n){let best="",bk=0;for(const [pn,g] of DISH[n].items){if(!pn||!CARBG[pn])continue;const P=PROD[pn],k=g*P.ed/100*P.kc;if(k>bk){bk=k;best=CARBG[pn]}}return best}
+function rng(seed){let h=2166136261;for(const c of seed)h=Math.imul(h^c.charCodeAt(0),16777619);return ()=>{h+=0x6D2B79F5;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296}}
+const shuffleN=()=>S.shuffle&&S.shuffle.wk===weekKey()?S.shuffle.n:0;
+function genPlan(){
+  const P=S.profile||SAMPLE,sl=SLOTS[S.meals]||SLOTS[4],R=rng(weekKey()+"|"+shuffleN()+"|"+S.meals+"|"+P.goal+"|"+P.budget);
+  const eco=P.budget==="Економ",cut=P.goal==="Рельєф",kc=calc(S.profile).kcal;
+  const week={},gw={},cnt={},last={};
+  return DAYS.map((d,di)=>{const day=new Set(),gd={},cd={};
+    return sl.map(([lbl,ty,sh],si)=>{
+      const fav=(S.fav[ty]||[]).filter(x=>DISH[x]&&!conflict(x));let dish;
+      if(fav.length){const c=cnt[ty]||0;cnt[ty]=c+1;dish=fav[c%fav.length]}
+      else{let C=Object.keys(DISH).filter(n=>DISH[n].type===ty&&!conflict(n)&&!DISH[n].mine&&!day.has(n));
+        if(!C.length)C=Object.keys(DISH).filter(n=>!conflict(n)&&!DISH[n].mine&&!day.has(n)&&DISH[n].type!=="Основна");
+        let bestS=1e9;for(const n of C){const D=DISH[n],g=pgroup(n),por=kc*sh/D.kc;
+          let sc=R()*3;
+          sc+=(week[n]||0)*(ty==="Основна"?7:4);if((week[n]||0)>=(ty==="Основна"?2:3))sc+=40;
+          if(last[si]===n)sc+=6;
+          if(gd[g]&&ty==="Основна")sc+=8;const cg=cgroup(n);if(cg&&cd[cg])sc+=6;if(g==="риба"||g==="консерва"){if(gd.риба||gd.консерва)sc+=12}
+          if(CAP[g]!==undefined&&(gw[g]||0)>=CAP[g])sc+=25;
+          if((g==="риба"||g==="консерва")&&((gw.риба||0)+(gw.консерва||0))>=3)sc+=25;
+          sc+=(gw[g]||0)*1.2;
+          const cost=D.cost*por;sc+=eco?cost/12:cost/30;
+          const pd=D.p*4/D.kc;sc-=pd*(cut?14:6);
+          if(por<.55||por>2.4)sc+=6;
+          if(sc<bestS){bestS=sc;dish=n}}
+        if(!dish)dish=Object.keys(DISH).find(x=>DISH[x].type===ty)}
+      const g=pgroup(dish),cg2=cgroup(dish);if(cg2)cd[cg2]=1;day.add(dish);gd[g]=(gd[g]||0)+1;gw[g]=(gw[g]||0)+1;week[dish]=(week[dish]||0)+1;last[si]=dish;
+      return {lbl,ty,sh,dish,auto:false,from:""}})});
+}
+function buildPlan(){if(!S.tpl){PLAN=genPlan();return}
+
   const t=tplName(),W=DATA.weeks[t],sl=SLOTS[S.meals]||SLOTS[4];
   const tl={};for(const d of DAYS)for(const [,dish] of W[d]||[]){const ty=DISH[dish].type;(tl[ty]=tl[ty]||[]);if(!tl[ty].includes(dish))tl[ty].push(dish)}
   const cnt={},week={};
@@ -577,7 +618,7 @@ function buildPlan(){
       return {lbl,ty,sh,dish,auto,from}})});
 }
 function dayMeals(di){
-  const kc=calc(S.profile).kcal,day=DAYS[di],t=tplName(),n=S.meals;
+  const kc=calc(S.profile).kcal,day=DAYS[di],t=planKey(),n=S.meals;
   return (PLAN[di]||[]).map((x,s)=>{
     const key=t+"|"+n+"|"+day+"|"+s;const sw=S.swaps[key];
     const name=sw&&DISH[sw]&&!conflict(sw)?sw:x.dish,D=DISH[name],slotKc=kc*x.sh;
@@ -630,7 +671,7 @@ function viewMenu(){
        <div class="chips">${m.bad?`<span class="chip bad">заміни: ${esc(m.bad)}</span>`:""}${m.auto?'<span class="chip sw">підібрано під тебе</span>':""}${m.swapped?'<span class="chip sw">замінено</span>':""}${m.go?'<span class="chip">на ходу</span>':""}${m.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</div></span>
      <span class="x num">×${fmt(m.portion,1)}</span></button>
      ${full()?`<div class="mv"><button data-mv="${m.s}" data-dir="-1" aria-label="Перемістити вище" ${i===0?"disabled":""}>${ICON.up}</button><button data-mv="${m.s}" data-dir="1" aria-label="Перемістити нижче" ${i===ms.length-1?"disabled":""}>${ICON.down}</button></div>`:""}</div>`}).join("")}</div>
-  <div class="sec"><button class="btn ghost wide" data-go="cat">Усі страви і конструктор тарілки</button></div>
+  <div class="sec split">${!S.tpl&&full()?`<button class="btn ghost" data-shuffle="1">Інше меню на тиждень</button>`:""}<button class="btn ghost" data-go="cat">Усі страви</button></div>
   <div class="foot"><span>Тиждень: <b class="num">${fmt(week)} грн</b>, у середньому <b class="num">${fmt(week/7)} грн</b> на день.</span><span>Кружечок зліва — позначити з'їдене. Торкнись страви — продукти, рецепт і заміни. Стрілки ↑↓ міняють страви місцями. Мітки: Г — глютен, Г* — можливі сліди, Л — лактоза, Б — бобові.</span></div>`;
 }
 
@@ -806,7 +847,7 @@ function viewMe(){
     <div class="fld"><span class="lb">Прийомів їжі на день</span><div class="seg" role="group">${[[3,"без перекусу"],[4,"1 перекус"],[5,"2 перекуси"]].map(([k,l])=>`<button type="button" data-meals="${k}" aria-pressed="${k===S.meals}">${k}<small>${l}</small></button>`).join("")}</div></div>
     <div class="fld"><span class="lb">Улюблені страви</span><div class="rows">${FAVT.map(([ty,l])=>{const c=(S.fav[ty]||[]).length;return `<button class="btn ghost" data-fav="${ty}" style="text-align:left;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${l}</span><b>${c?c+" обрано":"з готового тижня"}</b></button>`}).join("")}</div>
     <p class="hint">Тиждень складеться з улюблених по черзі. На сніданок можна обрати й основну страву — будь-що.</p></div></div></div>
-  <div class="sec"><div class="h2">Готовий тиждень</div><div class="card fld"><label for="tpl">Береться для прийомів без улюблених</label><select id="tpl"><option value="">Автоматично (${esc((P.goal==="Рельєф"?"Рельєф":"Маса")+" · "+P.budget)})</option>${Object.keys(DATA.weeks).map(t=>`<option ${t===S.tpl?"selected":""}>${esc(t)}</option>`).join("")}</select></div></div>
+  <div class="sec"><div class="h2">Як складається меню</div><div class="card fld"><label for="tpl">Для прийомів без улюблених страв</label><select id="tpl"><option value="">Різноманітне — нове щотижня (рекомендовано)</option>${Object.keys(DATA.weeks).map(t=>`<option ${t===S.tpl?"selected":""} value="${esc(t)}">Готовий тиждень: ${esc(t)}</option>`).join("")}</select><p class="hint">Різноманітне меню чергує курку, індичку, свинину, рибу, яйця й молочне, рибу ставить не частіше 3 разів на тиждень і не двічі на день, враховує бюджет і ціль.</p></div></div>
   <div class="sec"><div class="h2">Поради</div>${TIPS.map(([t,b])=>`<details class="tip"><summary>${t}</summary><div>${b}</div></details>`).join("")}</div>
   <p class="note" style="margin-top:16px">Це орієнтир для здорових дорослих 18+, а не медична порада. Якщо є хронічні хвороби, проблеми з травленням чи ти приймаєш ліки, спершу порадься з лікарем. Витрата на тренуваннях порахована за усередненими коефіцієнтами навантаження. Ціни: ${esc(DATA.priceDate)}, без акцій.</p>`;
 }
@@ -977,6 +1018,7 @@ document.addEventListener("click",e=>{
   if(d.pay){closeSheet();openPay();return}
   if(d.buy){buy();return}
   if(!full()&&(d.mv!==undefined||d.meals||d.fav||d.swap||d.favt||d.build)){closeSheet();openPay();return}
+  if(d.shuffle){S.shuffle={wk:weekKey(),n:shuffleN()+1};save();render();haptic();return}
   if(d.eat!==undefined){const k=dayKey(S.day),o=S.eaten[k]=S.eaten[k]||{};if(o[d.eat])delete o[d.eat];else o[d.eat]=1;if(!Object.keys(o).length)delete S.eaten[k];save();render();haptic();return}
   if(d.build){S.bld=null;openBuilder(d.build==="1"?"":d.build);return}
   if(d.bt){S.bld.t=d.bt;reopenBuilder();return}
@@ -1050,7 +1092,7 @@ async function boot(){
   try{const raw=await store.get("state");if(raw){const v=JSON.parse(raw);
     Object.assign(S,{profile:migrate(v.profile),swaps:migSwaps(v.swaps||{}),checked:v.checked||{},tpl:v.tpl||"",meals:[3,4,5].includes(v.meals)?v.meals:4,fav:Object.assign({Сніданок:[],Основна:[],Перекус:[]},v.fav||{}),seenIntro:!!v.seenIntro||!!v.profile,
       prefs:Object.assign({excl:{},sub:{},dis:{},noGl:false,noLac:false,noBob:false},v.prefs||{}),
-      home:v.home||{},chkWk:v.chkWk||"",prepMode:v.prepMode===1?1:2})}}catch(e){}
+      home:v.home||{},shuffle:v.shuffle||null,chkWk:v.chkWk||"",prepMode:v.prepMode===1?1:2})}}catch(e){}
   try{const l=JSON.parse(await store.get("log")||"null");if(l){S.weights=Array.isArray(l.w)?l.w:[];S.eaten=l.e||{}}}catch(e){}
   try{const c=JSON.parse(await store.get("custom")||"null");if(c)S.custom=c}catch(e){}
   if(S.chkWk!==weekKey()){if(S.chkWk)S.checked={};S.chkWk=weekKey()}
