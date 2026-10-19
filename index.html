@@ -239,6 +239,7 @@ button.row{width:100%;background:transparent;border:0;border-bottom:1px solid va
 @media (max-width:419px){.tab{font-size:10.5px}}
 @media (max-width:339px){.tab .tl{display:none}.tab{padding:10px 0}}
 @media (max-width:359px){.tab{font-size:10px}.tab svg{width:20px;height:20px}.mrow{grid-template-columns:28px minmax(0,1fr) auto;gap:5px}.eat{width:26px;height:26px}}
+.meal .subn{display:block;font-size:12px;color:var(--accent);margin-top:2px;overflow-wrap:anywhere}
 /* QA fixes: narrow screens & long texts */
 .row span:last-child{white-space:nowrap;flex-shrink:0;text-align:right}
 .sheet{overflow-x:hidden}
@@ -341,6 +342,62 @@ const subLabel=o=>o[0]?short(o[0]):(o[2]?o[2].split(" (")[0]:"прибрати, 
 const LACF={"Молоко 2,5% «Селянське»":"Молоко безлактозне 2,5% «Галичина»","Сир кисломолочний 5% «Премія»":"Сир кисломолочний безлактозний 5% «Український»","Сир кисломолочний 9% «Яготинський»":"Сир кисломолочний безлактозний 5% «Український»","Сир твердий «Радамер» 45%":"Сир Гауда без лактози 45% «SOT»"};
 const MINOR=.35; // "прибрати" дозволено, лише якщо продукт дає < 35% калорій страви
 
+/* ---- dish names follow ingredient swaps ---- */
+const FORMS={
+ "Тунець у розсолі «Повна Чаша»":{nom:["Тунець"],ins:["тунцем"]},
+ "Куряче філе":{nom:["Куряче філе"],ins:["курячим філе","куркою"],gen:["курки"]},
+ "Індиче філе":{nom:["Індичка","Індиче філе"],ins:["індичкою"],gen:["індички"]},
+ "Фарш курячий з філе":{nom:["Курячий фарш"],ins:["курячим фаршем"],gen:["курячого фаршу"]},
+ "Фарш свино-яловичий":{nom:["Фарш"],ins:["фаршем"]},
+ "Скумбрія натуральна з олією, консерва «Своя Лінія»":{nom:["Скумбрія консервована"],ins:["скумбрією консервованою","скумбрією"]},
+ "Скумбрія атлантична заморожена":{nom:["Скумбрія"],ins:["скумбрією"]},
+ "Хек тушка заморожений":{nom:["Хек"],ins:["хеком"],gen:["хека"]},
+ "Минтай тушка заморожений":{nom:["Минтай"],ins:["минтаєм"],gen:["минтаю"]},
+ "Фарш з хека «Veladis»":{gen:["хека"]},
+ "Оселедець філе-шматочки в олії «Своя лінія»":{nom:["Оселедець"],ins:["оселедцем"]},
+ "Печінка яловича":{nom:["Печінка"],ins:["печінкою"]},
+ "Свинина (гуляш)":{gen:["свинини"],ins:["свининою"]},
+ "Куряче стегно (з кісткою)":{nom:["Курячі стегна"],ins:["курячими стегнами"]},
+ "Куряча гомілка":{nom:["Гомілки"],ins:["гомілками"]},
+ "Гречка «Ситий двір»":{nom:["Гречка"],ins:["гречкою"]},
+ "Рис круглий «Ситий двір»":{nom:["Рис"],ins:["рисом"]},
+ "Булгур «Attuale»":{nom:["Булгур"],ins:["булгуром"]},
+ "Макарони пера «Повна Чаша»":{nom:["Макарони"],ins:["макаронами"]},
+ "Кус-кус птітім «Trapeza»":{nom:["Кус-кус"],ins:["кус-кусом"]},
+ "Картопля біла":{nom:["Картопля"],ins:["картоплею"]},
+ "Вівсяні пластівці «Премія»":{nom:["Вівсянка"],ins:["вівсянкою"]},
+ "Квасоля відварена «Верес»":{nom:["Квасоля"],ins:["квасолею"]},
+ "Молоко 2,5% «Селянське»":{loc:["на молоці"]},
+ "Молоко безлактозне 2,5% «Галичина»":{loc:["на безлактозному молоці"]},
+ "Кефір 2,5%":{loc:["на кефірі"]},
+ "WATER":{loc:["на воді"]},
+ "Сир кисломолочний 5% «Премія»":{nom:["Сир кисломолочний","Сир 5%"],ins:["сиром"]},
+ "Сир кисломолочний 9% «Яготинський»":{nom:["Сир 9%"],ins:["сиром"]},
+ "Сир кисломолочний безлактозний 5% «Український»":{nom:["Безлактозний сир"],ins:["безлактозним сиром"]},
+ "Сир твердий «Радамер» 45%":{ins:["сиром"]},
+ "Сир Гауда без лактози 45% «SOT»":{ins:["безлактозною гаудою"]},
+ "Банан":{nom:["Банан"],ins:["бананом"]},
+ "Яблуко Гала":{nom:["Яблуко"],ins:["яблуком"]},
+ "Огірок":{ins:["огірком"]},
+ "Помідор":{ins:["помідорами","помідором"]},
+ "Броколі":{ins:["броколі"]},
+ "Кабачок":{ins:["кабачком"]},
+ "Перець солодкий червоний":{ins:["перцем"]},
+ "Морква":{ins:["морквою"]},
+ "Капуста білоголова":{nom:["Капуста"],ins:["капустою"]},
+ "Цибуля ріпчаста":{ins:["цибулею"]}};
+function relabel(name,rp){if(!rp||!rp.length)return name;let n=name;
+  for(const [from,to] of rp){const F=FORMS[from];if(!F)continue;
+    for(const cs of ["loc","ins","gen","nom"])for(const v of F[cs]||[]){
+      const i=cs==="nom"?(n.startsWith(v)?0:-1):n.indexOf(" "+v)>=0?n.indexOf(" "+v)+1:-1;if(i<0)continue;
+      if(to===null){if(cs==="nom")continue;const m0=n;
+        for(const [a,b] of [[" з "+v+" і "," з "],[" зі "+v+" і "," з "],[" і "+v,""],[" та "+v,""],[" з "+v,""],[" зі "+v,""],[" "+v,""]])if(n.includes(a)){n=n.replace(a,b);break}
+        if(n!==m0)break;continue}
+      const T=FORMS[to];const w=T&&(T[cs]||[])[0];if(!w)continue;
+      if(n.toLowerCase().includes(w.toLowerCase())){for(const [x,y] of [[" і "+v,""],[" з "+v+" і "," з "],[" "+v+" і ",""]])if(n.includes(x)){n=n.replace(x,y);break}break}
+      n=n.slice(0,i)+w+n.slice(i+v.length);break}}
+  return n.replace(/ зі (?=[^сзшщжСЗШЩЖ])/g," з ").replace(/\s{2,}/g," ").trim()}
+const dn=n=>(DISH[n]&&DISH[n].label)||n;
 /* ---- nutrition per 1 portion (with the user's ingredient substitutes) ---- */
 function nutr(items){
   let kc=0,p=0,f=0,c=0,cost=0,miss=false;const tags=new Set();
@@ -360,25 +417,25 @@ const usedProducts=()=>[...new Set(Object.values(DATA.dishes).flatMap(d=>d.i.map
 let DISH={};
 function effItems(name){
   const d=DATA.dishes[name],ex=S.prefs.excl,sub=S.prefs.sub||{},tot=BASE[name].kc;
-  const items=[],notes=[],left=[];
+  const items=[],notes=[],left=[],rp=[];
   for(const [pn,g] of d.i){
     if(!ex[pn]){const lf=S.prefs.noLac&&LACF[pn];
-      if(lf&&!ex[lf]){items.push([lf,g,pn]);notes.push(short(lf).toLowerCase()+" замість звичайного")}else items.push([pn,g,null]);continue}
+      if(lf&&!ex[lf]){items.push([lf,g,pn]);rp.push([pn,lf]);notes.push(short(lf).toLowerCase()+" замість звичайного")}else items.push([pn,g,null]);continue}
     const opt=(SUBS[pn]||[]).find(o=>subLabel(o)===sub[pn]);
     if(!opt){left.push(pn);items.push([pn,g,null]);continue}
     const pr=PROD[pn],kcI=g*pr.ed/100*pr.kc;
     if(!opt[0]){
-      if(opt[2]){items.push([null,g,opt[2]]);notes.push(opt[2])}
-      else if(kcI/tot<MINOR)notes.push("без: "+short(pn).toLowerCase());
+      if(opt[2]){items.push([null,g,opt[2]]);rp.push([pn,"WATER"]);notes.push(opt[2])}
+      else if(kcI/tot<MINOR){rp.push([pn,null]);notes.push("без: "+short(pn).toLowerCase())}
       else{left.push(pn);items.push([pn,g,null])}
       continue}
     if(ex[opt[0]]){left.push(pn);items.push([pn,g,null]);continue}
     const to=PROD[opt[0]],gr=opt[1]==="k"?kcI/(to.kc*to.ed/100):g*opt[1];
-    items.push([opt[0],Math.round(gr/5)*5,pn]);notes.push(short(opt[0]).toLowerCase()+" замість: "+short(pn).toLowerCase())}
-  return {items,notes,left};
+    items.push([opt[0],Math.round(gr/5)*5,pn]);rp.push([pn,opt[0]]);notes.push(short(opt[0]).toLowerCase()+" замість: "+short(pn).toLowerCase())}
+  return {items,notes,left,rp};
 }
 function rebuild(){DISH={};for(const name of Object.keys(DATA.dishes)){const e=effItems(name);
-  const it=e.items.filter(x=>x[0]);DISH[name]={...BASE[name],...nutr(it),items:e.items,notes:e.notes,left:e.left,fish:it.some(x=>PROD[x[0]].fish)}}}
+  const it=e.items.filter(x=>x[0]);DISH[name]={...BASE[name],...nutr(it),items:e.items,notes:e.notes,left:e.left,label:relabel(name,e.rp),fish:it.some(x=>PROD[x[0]].fish)}}}
 
 /* ---- state & storage (Telegram CloudStorage → localStorage) ---- */
 let S={profile:null,swaps:{},checked:{},tab:"menu",day:(new Date().getDay()+6)%7,tpl:"",meals:4,fav:{Сніданок:[],Основна:[],Перекус:[]},prefs:{excl:{},sub:{},dis:{},noGl:false,noLac:false,noBob:false},seenIntro:false,introStep:0,firstPrefs:false,custom:{},eaten:{},weights:[],home:{},chkWk:"",prepMode:2,prepSess:0,catF:{ty:"",go:false,fish:false,lac:false,gl:false,ma:false,q:""},bld:null};
@@ -569,8 +626,8 @@ function viewMenu(){
     <div class="cost"><span>Вартість дня${T.miss?" (без продуктів без ціни)":""}</span><strong class="num">${fmt(T.cost)} грн</strong></div>
   </section>
   <div class="list">${ms.map((m,i)=>{const e=isEaten(di,m.s);return `<div class="mrow${e?" ate":""}"><button class="eat" data-eat="${m.s}" aria-pressed="${e}" aria-label="${e?"Зняти позначку":"Позначити як з'їдене"}: ${esc(m.name)}">${e?ICON.check:""}</button><button class="meal ${m.bad?"bad":""}" data-meal="${m.s}">
-     <span style="min-width:0"><span class="sl">${esc(m.lbl)}</span><span class="n">${esc(m.name)}</span><div class="m num">${fmt(m.kc)} ккал · ${fmt(m.p)} г білка · ${fmt(m.cost)} грн</div>
-       <div class="chips">${m.bad?`<span class="chip bad">заміни: ${esc(m.bad)}</span>`:""}${m.auto?'<span class="chip sw">підібрано під тебе</span>':""}${m.swapped?'<span class="chip sw">замінено</span>':""}${m.notes.length?'<span class="chip sw">свій інгредієнт</span>':""}${m.go?'<span class="chip">на ходу</span>':""}${m.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</div></span>
+     <span style="min-width:0"><span class="sl">${esc(m.lbl)}</span><span class="n">${esc(dn(m.name))}</span>${m.notes.length?`<span class="subn">${esc(m.notes.join(" · "))}</span>`:""}<div class="m num">${fmt(m.kc)} ккал · ${fmt(m.p)} г білка · ${fmt(m.cost)} грн</div>
+       <div class="chips">${m.bad?`<span class="chip bad">заміни: ${esc(m.bad)}</span>`:""}${m.auto?'<span class="chip sw">підібрано під тебе</span>':""}${m.swapped?'<span class="chip sw">замінено</span>':""}${m.go?'<span class="chip">на ходу</span>':""}${m.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</div></span>
      <span class="x num">×${fmt(m.portion,1)}</span></button>
      ${full()?`<div class="mv"><button data-mv="${m.s}" data-dir="-1" aria-label="Перемістити вище" ${i===0?"disabled":""}>${ICON.up}</button><button data-mv="${m.s}" data-dir="1" aria-label="Перемістити нижче" ${i===ms.length-1?"disabled":""}>${ICON.down}</button></div>`:""}</div>`}).join("")}</div>
   <div class="sec"><button class="btn ghost wide" data-go="cat">Усі страви і конструктор тарілки</button></div>
@@ -593,7 +650,7 @@ function viewCat(){const F=S.catF,L=catList();
   <div class="tog cat">${[["","Усі"],["Сніданок","Сніданки"],["Основна","Основні"],["Перекус","Перекуси"],["mine","Мої"]].map(([k,l])=>`<button data-cty="${k}" aria-pressed="${F.ty===k}">${l}</button>`).join("")}</div>
   <div class="tog cat">${CATF.map(([k,l])=>`<button data-cf="${k}" aria-pressed="${!!F[k]}">${l}</button>`).join("")}</div>
   <div class="rows" style="margin-top:12px" id="catlist">${catRows(L)}</div>`}
-function catRows(L){return L.map(n=>{const D=DISH[n],b=conflict(n);return `<button class="alt cat-i${b?" off":""}" data-dish="${esc(n)}"><span class="a">${esc(n)}<small>${TYPEN[D.type]}${D.tm?` · ${D.tm} хв`:""}${b?` · ${esc(b)}`:""}</small><span class="chips">${D.mine?'<span class="chip sw">моя</span>':""}${D.go?'<span class="chip">на ходу</span>':""}${D.fish?'<span class="chip">риба</span>':""}${D.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</span></span><span class="b num">${fmt(D.kc)} ккал<br>${fmt(D.p)} г білка</span></button>`}).join("")||'<div class="info">Нічого не знайдено. Зніми частину фільтрів.</div>'}
+function catRows(L){return L.map(n=>{const D=DISH[n],b=conflict(n);return `<button class="alt cat-i${b?" off":""}" data-dish="${esc(n)}"><span class="a">${esc(dn(n))}<small>${TYPEN[D.type]}${D.tm?` · ${D.tm} хв`:""}${b?` · ${esc(b)}`:""}</small><span class="chips">${D.mine?'<span class="chip sw">моя</span>':""}${D.go?'<span class="chip">на ходу</span>':""}${D.fish?'<span class="chip">риба</span>':""}${D.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</span></span><span class="b num">${fmt(D.kc)} ккал<br>${fmt(D.p)} г білка</span></button>`}).join("")||'<div class="info">Нічого не знайдено. Зніми частину фільтрів.</div>'}
 
 /* ---- shopping ---- */
 function viewShop(){
@@ -639,12 +696,12 @@ function viewPrep(){
   <div class="fld"><span class="lb">Скільки разів готуєш наперед</span><div class="seg" role="group">${[[2,"2 рази","Нд і Ср"],[1,"1 раз","Нд + морозилка"]].map(([v,l,sm])=>`<button type="button" data-pmode="${v}" aria-pressed="${S.prepMode===v}">${l}<small>${sm}</small></button>`).join("")}</div></div>
   ${ss.length>1?`<div class="tog sess">${ss.map((x,i)=>`<button data-psess="${i}" aria-pressed="${i===k}">${x.name}<small>${x.sub}</small></button>`).join("")}</div>`:""}
   <div class="sec"><div class="h2">${se.name} · ${se.sub}</div>
-    <div class="card rows">${Object.entries(dishes).map(([n,x])=>`<button class="row link" data-dish="${esc(n)}"><span>${esc(n)}<br><small class="note">${[...new Set(x.days)].map(dn).join(", ")}${se.frz.length&&x.days.some(d=>se.frz.includes(d))?" · частину в морозилку":""}</small></span><span class="num">${Math.ceil(x.p-0.05)} конт.</span></button>`).join("")||'<div class="row"><span>У ці дні немає страв, які можна готувати наперед. Усе готується свіжим — дивись нижче.</span></div>'}</div>
+    <div class="card rows">${Object.entries(dishes).map(([n,x])=>`<button class="row link" data-dish="${esc(n)}"><span>${esc(dn(n))}<br><small class="note">${[...new Set(x.days)].map(dn).join(", ")}${se.frz.length&&x.days.some(d=>se.frz.includes(d))?" · частину в морозилку":""}</small></span><span class="num">${Math.ceil(x.p-0.05)} конт.</span></button>`).join("")||'<div class="row"><span>У ці дні немає страв, які можна готувати наперед. Усе готується свіжим — дивись нижче.</span></div>'}</div>
     ${Object.keys(dishes).length?`<p class="note">Займе приблизно ${tmax+30}–${tmax+60} хв. Торкнись страви, щоб відкрити рецепт.</p>`:""}</div>
   ${Object.keys(g).length?`<div class="sec"><div class="h2">Продукти на цю заготовку</div><div class="card rows">${Object.entries(g).sort((a,b)=>b[1]-a[1]).map(([n,gr])=>`<div class="row"><span>${esc(n)}</span><span class="num">${fmt(Math.round(gr/10)*10)} г</span></div>`).join("")}</div><p class="note">Вага — як купується: з кістками та шкіркою.</p></div>`:""}
   <div class="sec"><div class="h2">Порядок</div><div class="card"><ol class="tips">${steps.map(x=>`<li>${x}</li>`).join("")}</ol></div></div>
-  <div class="sec"><div class="h2">Свіже в ці дні</div><div class="card rows">${se.days.filter(di=>fresh[di]).map(di=>fresh[di].map(m=>`<button class="row link" data-dish="${esc(m.name)}"><span>${dn(di)} · ${esc(m.lbl.toLowerCase())}<br><small class="note">${esc(m.name)}</small></span><span class="num">${BASE[m.name].tm||5} хв</span></button>`).join("")).join("")||'<div class="row"><span>Усе вже в заготовці</span></div>'}</div></div>
-  ${S.prepMode===2&&k===ss.length-1||S.prepMode===1?`<div class="sec"><div class="h2">Неділя · готуєш у день</div><div class="card rows">${sunday.map(m=>`<button class="row link" data-dish="${esc(m.name)}"><span>${esc(m.lbl)}<br><small class="note">${esc(m.name)}</small></span><span class="num">${BASE[m.name].tm||5} хв</span></button>`).join("")}</div></div>`:""}
+  <div class="sec"><div class="h2">Свіже в ці дні</div><div class="card rows">${se.days.filter(di=>fresh[di]).map(di=>fresh[di].map(m=>`<button class="row link" data-dish="${esc(m.name)}"><span>${dn(di)} · ${esc(m.lbl.toLowerCase())}<br><small class="note">${esc(dn(m.name))}</small></span><span class="num">${BASE[m.name].tm||5} хв</span></button>`).join("")).join("")||'<div class="row"><span>Усе вже в заготовці</span></div>'}</div></div>
+  ${S.prepMode===2&&k===ss.length-1||S.prepMode===1?`<div class="sec"><div class="h2">Неділя · готуєш у день</div><div class="card rows">${sunday.map(m=>`<button class="row link" data-dish="${esc(m.name)}"><span>${esc(m.lbl)}<br><small class="note">${esc(dn(m.name))}</small></span><span class="num">${BASE[m.name].tm||5} хв</span></button>`).join("")}</div></div>`:""}
   <div class="sec"><div class="h2">Зберігання</div><div class="card"><ul class="tips">
     <li>Готова їжа в холодильнику — до 3 діб. Тому ${S.prepMode===1?"Пн–Ср — у холодильник, а Чт–Сб — одразу в морозилку.":"заготовок дві: неділя на Пн–Ср і середа на Чт–Сб."}</li>
     ${S.prepMode===1?"<li>Контейнер з морозилки переклади в холодильник увечері напередодні.</li>":""}
@@ -785,7 +842,7 @@ function openDish(name){const D=DISH[name];if(!D)return;
   const b=conflict(name),ty=D.type,isFav=(S.fav[ty]||[]).includes(name),favL=FAVT.find(x=>x[0]===ty)[1].toLowerCase(),dis=!!S.prefs.dis[name];
   const ing=D.items.map(([pn,g,from])=>`<div class="row"><span>${pn?esc(pn):esc(from)}${pn&&from?`<br><small class="note">замість: ${esc(short(from).toLowerCase())}</small>`:""}</span><span class="num">${fmt(Math.round(g/5)*5)} ${pn?"г":"мл"}</span></div>`).join("");
   $("#layer").innerHTML=`<div class="scrim" data-close="1"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(name)}"><div class="in">
-    <div class="grab"></div><h3>${esc(name)}</h3>
+    <div class="grab"></div><h3>${esc(dn(name))}</h3>${dn(name)!==name?`<p class="note" style="margin:0">Оригінал: ${esc(name)}</p>`:""}
     <div class="chips">${D.mine?'<span class="chip sw">моя страва</span>':""}<span class="chip">${TYPEN[ty]}</span>${D.go?'<span class="chip">на ходу</span>':""}${D.ma?'<span class="chip">для заготовки</span>':""}${D.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</div>
     ${b?`<div class="warn">Не підходить: ${esc(b)}.</div>`:""}
     <div class="kv card"><div><span>Базова порція</span><strong class="num">${fmt(D.kc)} ккал</strong></div><div><span>Білок</span><strong class="num">${fmt(D.p)} г</strong></div><div><span>Ціна</span><strong class="num">${fmt(D.cost)} грн</strong></div></div>
@@ -855,17 +912,17 @@ function openMeal(s,di){
     +D.notes.filter(x=>x.startsWith("без: ")).map(x=>`<div class="row"><span class="note">${esc(x[0].toUpperCase()+x.slice(1))}</span><span></span></div>`).join("");
   const all=Object.entries(DISH).filter(([n])=>n!==m.name&&!conflict(n)).map(([n,d])=>{const por=r1(Math.min(Math.max(m.slotKc/d.kc,.5),2.5));return {n,ty:d.type,por,p:d.p*por,cost:d.cost*por}}).sort((a,b)=>Math.abs(a.por-1)-Math.abs(b.por-1)||b.p-a.p);
   const alts=all.filter(a=>a.ty===m.slotType),other=all.filter(a=>a.ty!==m.slotType);
-  const altB=a=>`<button class="alt" data-swap="${esc(m.key)}" data-to="${esc(a.n)}"><span class="a">${esc(a.n)}</span><span class="b num">×${fmt(a.por,1)} · ${fmt(a.p)} г білка<br>${fmt(a.cost)} грн</span></button>`;
+  const altB=a=>`<button class="alt" data-swap="${esc(m.key)}" data-to="${esc(a.n)}"><span class="a">${esc(dn(a.n))}</span><span class="b num">×${fmt(a.por,1)} · ${fmt(a.p)} г білка<br>${fmt(a.cost)} грн</span></button>`;
   const isFav=(S.fav[m.slotType]||[]).includes(m.name),favL=FAVT.find(x=>x[0]===m.slotType)[1].toLowerCase();
   const dis=!!S.prefs.dis[m.name];
   $("#layer").innerHTML=`<div class="scrim" data-close="1"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(m.name)}"><div class="in">
-    <div class="grab"></div><h3>${esc(m.name)}</h3>
+    <div class="grab"></div><h3>${esc(dn(m.name))}</h3>
     ${m.bad?`<div class="warn">Ця страва тобі не підходить (${esc(m.bad)}). Обери заміну нижче${D.left.some(pn=>SUBS[pn])?" або вкажи, чим замінювати продукт, у «Що не їм»":""}.</div>`:""}
     ${D.notes.length&&!m.bad?`<div class="info">Твій варіант: ${esc(D.notes.join("; "))}.</div>`:""}
     <div class="kv card"><div><span>Порція</span><strong class="num">×${fmt(m.portion,1)}</strong></div><div><span>Ккал</span><strong class="num">${fmt(m.kc)}</strong></div><div><span>Білок</span><strong class="num">${fmt(m.p)} г</strong></div></div>
     <div><div class="grp">Продукти на цю порцію</div><div class="card rows">${ing}</div></div>
     ${recipeBlock(m.name)}
-    ${m.swapped?`<button class="btn ghost" data-unswap="${esc(m.key)}">Повернути страву з плану: ${esc(m.orig)}</button>`:""}
+    ${m.swapped?`<button class="btn ghost" data-unswap="${esc(m.key)}">Повернути страву з плану: ${esc(dn(m.orig))}</button>`:""}
 ${full()?`    <button class="btn ghost" data-build="${esc(m.key)}">Зібрати свою страву на ${esc(m.lbl.toLowerCase())}</button>
     <div><div class="grp">Замінити на (калорії лишаться ті самі)</div><div class="rows">${alts.length?alts.map(altB).join(""):'<div class="info">Немає страв, які тобі підходять. Спробуй у «Профіль» → «Що не їм» обрати, чим замінювати продукт, який не їси.</div>'}</div></div>
     ${other.length?`<details class="tip"><summary>Інші страви на ${esc(m.lbl.toLowerCase())} (${other.length})</summary><div class="rows">${other.map(altB).join("")}</div></details>`:""}
