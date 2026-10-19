@@ -166,7 +166,7 @@ body.typing .tabs{display:none}
 .subs .lb{width:100%;font-size:12px;color:var(--muted);opacity:.8}
 .subs button{font:inherit;font-size:13px;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;min-height:34px;max-width:100%;overflow-wrap:anywhere;text-align:left}
 .subs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-.mrow{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:6px;align-items:stretch}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:stretch}
 .meal{grid-template-columns:minmax(0,1fr) auto!important}
 .meal .sl{display:block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .mv{display:grid;grid-template-rows:1fr 1fr;gap:6px}
@@ -176,6 +176,18 @@ body.typing .tabs{display:none}
 .item.fav .box{background:var(--accent);border-color:var(--accent)}
 .item.done.fav .nm{text-decoration:none;color:inherit}
 .item:disabled{opacity:.55}
+.day.lockd{opacity:.55}
+.day .lk{display:block;width:auto;height:auto;background:none;line-height:0}
+.lkt{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--muted);vertical-align:middle;margin-left:6px;letter-spacing:0;text-transform:none}
+.lockc{display:grid;gap:10px;justify-items:start;margin-top:12px}
+.lockc .lk{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.lockc .lk svg{width:20px;height:20px}
+.card.price{display:grid;gap:4px}
+.card.price b{font-family:var(--f-display);font-size:24px}
+.card.price span{font-size:13px;color:var(--muted)}
+.card.sub{display:grid;gap:10px}
+.card.sub p{margin:4px 0 0}
+.paylist{margin:0}
 /* QA fixes: narrow screens & long texts */
 .row span:last-child{white-space:nowrap;flex-shrink:0;text-align:right}
 .sheet{overflow-x:hidden}
@@ -364,6 +376,44 @@ function conflict(name){const P=S.prefs;if(P.dis[name])return "не подоба
   if(P.noBob&&t.includes("Б"))return "є бобові";
   return ""}
 
+/* ---- access: free = calculator + Monday; subscription (Telegram Stars) = everything ---- */
+const API="";
+let ACC={mode:API?"free":"open",until:0,price:150,noTG:false,busy:false};
+const full=()=>ACC.mode!=="free";
+const lockI='<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+async function api(path){const t=TG();const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData:t.initData})});if(!r.ok)throw new Error("api "+r.status);return r.json()}
+async function loadAccess(){
+  if(!API){ACC.mode="open";return}
+  const t=TG();if(!t||!t.initData){ACC.mode="free";ACC.noTG=true;return}
+  try{const c=JSON.parse(await store.get("acc")||"null");if(c&&c.until>Date.now()){ACC.mode="paid";ACC.until=c.until}}catch(e){}
+  try{const j=await api("/api/status");ACC.price=j.price||ACC.price;ACC.until=j.until||0;ACC.mode=j.paid?"paid":"free";
+    store.set("acc",JSON.stringify({until:j.paid?j.until:0}))}catch(e){}
+}
+async function buy(){
+  const t=TG();if(!t||!t.initData||!t.openInvoice){openPay();return}
+  if(ACC.busy)return;ACC.busy=true;openPay();
+  try{const {link}=await api("/api/invoice");
+    t.openInvoice(link,async st=>{
+      if(st==="paid"){for(let i=0;i<8&&ACC.mode!=="paid";i++){await new Promise(r=>setTimeout(r,1500));await loadAccess()}
+        ACC.busy=false;closeSheet();render();if(ACC.mode==="paid")try{t.HapticFeedback.notificationOccurred("success")}catch(e){}}
+      else{ACC.busy=false;openPay()}});
+  }catch(e){ACC.busy=false;openPay("Не вдалося створити рахунок. Перевір інтернет і спробуй ще раз.")}
+}
+function openPay(err){
+  const t=TG(),can=t&&t.initData&&!ACC.noTG;
+  $("#layer").innerHTML=`<div class="scrim" data-close="1"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Повний доступ"><div class="in">
+    <div class="grab"></div><h3>Повний доступ</h3>
+    <p class="note">Безкоштовно — калькулятор калорій і меню на понеділок. Підписка відкриває все інше:</p>
+    <ul class="tips paylist"><li>Меню на всі 7 днів під твої калорії</li><li>Список покупок на тиждень з цінами</li><li>План заготовки на неділю</li><li>Заміни страв, свій порядок і улюблені страви</li><li>3, 4 чи 5 прийомів їжі на день</li></ul>
+    <div class="card price"><b class="num">${ACC.price} ⭐</b><span>на місяць · продовжується автоматично, скасувати можна будь-коли в налаштуваннях Telegram</span></div>
+    ${err?`<div class="warn">${esc(err)}</div>`:""}
+    ${can?`<button class="btn" data-buy="1" ${ACC.busy?"disabled":""}>${ACC.busy?"Відкриваю оплату…":"Оформити підписку"}</button>`:`<div class="info">Оформити підписку можна, відкривши додаток через Telegram-бота.</div>`}
+    <button class="btn ghost" data-close="1">Не зараз</button></div></div>`;
+  tgBack(true);
+}
+function lockedView(h1,what){return `<header class="top"><div class="brand"><h1>${h1}</h1><small>у підписці</small></div></header>
+  <div class="card lockc"><div class="lk">${lockI}</div><b>${what}</b><p class="note">Безкоштовно відкриті калькулятор і меню на понеділок. Повний тиждень, покупки й заготовка — за підпискою.</p><button class="btn" data-pay="1">Відкрити за ${ACC.price} ⭐ на місяць</button></div>`}
+
 /* ---- plan: meal slots, favourites, template fallback ---- */
 const SLOTS={3:[["Сніданок","Сніданок",.30],["Обід","Основна",.37],["Вечеря","Основна",.33]],
  4:[["Сніданок","Сніданок",.25],["Обід","Основна",.30],["Перекус","Перекус",.17],["Вечеря","Основна",.28]],
@@ -396,7 +446,7 @@ function dayMeals(di){
   });
 }
 function dayTot(di){const m=dayMeals(di);return {kc:m.reduce((a,x)=>a+x.kc,0),p:m.reduce((a,x)=>a+x.p,0),cost:m.reduce((a,x)=>a+x.cost,0),miss:m.some(x=>x.miss),bad:m.filter(x=>x.bad).length}}
-function badAll(){const r=[];for(let i=0;i<7;i++)for(const m of dayMeals(i))if(m.bad)r.push(m);return r}
+function badAll(){const r=[];for(let i=0;i<(full()?7:1);i++)for(const m of dayMeals(i))if(m.bad)r.push(m);return r}
 function need(days){const g={};for(const di of days)for(const m of dayMeals(di))for(const [pn,gr] of DISH[m.name].items)if(pn)g[pn]=(g[pn]||0)+gr*m.portion;return g}
 
 /* ---- views ---- */
@@ -413,10 +463,11 @@ function pctCls(v,lowOnly){return v<0.9?"lo":(!lowOnly&&v>1.1)?"hi":""}
 
 function viewMenu(){
   const c=calc(S.profile),di=S.day,ms=dayMeals(di),T=dayTot(di),bad=badAll();
-  const dots=DAYS.map((d,i)=>{const t=dayTot(i),r=t.kc/c.kcal;return `<button class="day" aria-pressed="${i===di}" data-day="${i}">${d}<i class="${t.bad?"bad":r>=.9&&r<=1.1?"ok":"lo"}"></i></button>`}).join("");
+  const dots=DAYS.map((d,i)=>{const t=dayTot(i),r=t.kc/c.kcal;return !full()&&i>0?`<button class="day lockd" data-pay="1" aria-label="${d}: у підписці">${d}<i class="lk">${lockI}</i></button>`:`<button class="day" aria-pressed="${i===di}" data-day="${i}">${d}<i class="${t.bad?"bad":r>=.9&&r<=1.1?"ok":"lo"}"></i></button>`}).join("");
   const kr=T.kc/c.kcal,pr=T.p/c.prot;
   let week=0;for(let i=0;i<7;i++)week+=dayTot(i).cost;
   const top=bad.length?`<div class="banner w"><span>${bad.length} ${bad.length===1?"страва не підходить":"страв(и) не підходять"} під твої вподобання. Обери їм заміну.</span><button data-fix="1">Показати</button></div>`
+    :!full()?`<div class="banner"><span>Безкоштовно відкритий понеділок. Усі 7 днів, покупки й заготовка — у підписці.</span><button data-pay="1">Відкрити</button></div>`
     :!S.profile?`<div class="banner"><span>Це приклад для хлопця 65 кг на масі. Введи свої дані, і меню підлаштується.</span><button data-go="me">Ввести</button></div>`:"";
   return `<header class="top"><div class="brand"><h1>Їж, щоб рости</h1><small>${esc(planName())}<span class="k"><br>${S.meals} ${S.meals===5?"прийомів":"прийоми"} їжі</span></small></div><div class="days">${dots}</div></header>
   ${top}
@@ -431,7 +482,7 @@ function viewMenu(){
      <span style="min-width:0"><span class="sl">${esc(m.lbl)}</span><span class="n">${esc(m.name)}</span><div class="m num">${fmt(m.kc)} ккал · ${fmt(m.p)} г білка · ${fmt(m.cost)} грн</div>
        <div class="chips">${m.bad?`<span class="chip bad">заміни: ${esc(m.bad)}</span>`:""}${m.swapped?'<span class="chip sw">замінено</span>':""}${m.notes.length?'<span class="chip sw">свій інгредієнт</span>':""}${m.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</div></span>
      <span class="x num">×${fmt(m.portion,1)}</span></button>
-     <div class="mv"><button data-mv="${m.s}" data-dir="-1" aria-label="Перемістити вище" ${i===0?"disabled":""}>${ICON.up}</button><button data-mv="${m.s}" data-dir="1" aria-label="Перемістити нижче" ${i===ms.length-1?"disabled":""}>${ICON.down}</button></div></div>`).join("")}</div>
+     ${full()?"":"<!--"}<div class="mv"><button data-mv="${m.s}" data-dir="-1" aria-label="Перемістити вище" ${i===0?"disabled":""}>${ICON.up}</button><button data-mv="${m.s}" data-dir="1" aria-label="Перемістити нижче" ${i===ms.length-1?"disabled":""}>${ICON.down}</button></div>${full()?"":"-->"}</div>`).join("")}</div>
   <div class="foot"><span>Тиждень: <b class="num">${fmt(week)} грн</b>, у середньому <b class="num">${fmt(week/7)} грн</b> на день.</span><span>Торкнись страви, щоб побачити продукти або замінити її. Стрілки ↑↓ міняють страви місцями. Мітки: Г — глютен, Г* — можливі сліди, Л — лактоза, Б — бобові.</span></div>`;
 }
 
@@ -531,7 +582,8 @@ function viewMe(){
     ${c.warns.length?c.warns.map(w=>`<div class="warn">${w}</div>`).join(""):`<div class="okmsg">Усе в межах норми. Зважуйся 1–2 рази на тиждень зранку.</div>`}
   </div></div>
   <div class="sec"><div class="h2">Що не їм</div><button class="btn ghost" data-prefs="1" style="text-align:left;display:flex;justify-content:space-between"><span>Продукти, страви, глютен, лактоза</span><b>${np?np+" обрано":"налаштувати"}</b></button></div>
-  <div class="sec"><div class="h2">Мій розклад</div><div class="card" style="display:grid;gap:12px">
+  ${API?`<div class="sec"><div class="h2">Підписка</div><div class="card sub">${ACC.mode==="paid"?`<div><b>Активна</b><p class="note">до ${new Date(ACC.until).toLocaleDateString("uk-UA",{day:"numeric",month:"long"})}, продовжується автоматично. Скасувати: Налаштування Telegram → Мої зірки.</p></div>`:`<div><b>Безкоштовна версія</b><p class="note">Калькулятор і меню на понеділок. Повний тиждень, покупки й заготовка — ${ACC.price} ⭐ на місяць.</p></div><button class="btn" data-pay="1">Відкрити повний доступ</button>`}</div></div>`:""}
+  <div class="sec"><div class="h2">Мій розклад${full()?"":` <span class="lkt">${lockI} у підписці</span>`}</div><div class="card" style="display:grid;gap:12px">
     <div class="fld"><span class="lb">Прийомів їжі на день</span><div class="seg" role="group">${[[3,"без перекусу"],[4,"1 перекус"],[5,"2 перекуси"]].map(([k,l])=>`<button type="button" data-meals="${k}" aria-pressed="${k===S.meals}">${k}<small>${l}</small></button>`).join("")}</div></div>
     <div class="fld"><span class="lb">Улюблені страви</span><div class="rows">${FAVT.map(([ty,l])=>{const c=(S.fav[ty]||[]).length;return `<button class="btn ghost" data-fav="${ty}" style="text-align:left;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${l}</span><b>${c?c+" обрано":"з готового тижня"}</b></button>`}).join("")}</div>
     <p class="hint">Тиждень складеться з улюблених по черзі. На сніданок можна обрати й основну страву — будь-що.</p></div></div></div>
@@ -541,9 +593,9 @@ function viewMe(){
 }
 
 function render(){
-  rebuild();buildPlan();
+  rebuild();buildPlan();if(!full())S.day=0;
   renderTabs();
-  $("#app").innerHTML={menu:viewMenu,shop:viewShop,prep:viewPrep,me:viewMe}[S.tab]();
+  $("#app").innerHTML=(!full()&&S.tab==="shop")?lockedView("Покупки","Список покупок на тиждень"):(!full()&&S.tab==="prep")?lockedView("Заготовка","План заготовки на неділю"):{menu:viewMenu,shop:viewShop,prep:viewPrep,me:viewMe}[S.tab]();
   renderIntro();
 }
 
@@ -579,9 +631,10 @@ function openMeal(s,di){
     <div class="kv card"><div><span>Порція</span><strong class="num">×${fmt(m.portion,1)}</strong></div><div><span>Ккал</span><strong class="num">${fmt(m.kc)}</strong></div><div><span>Білок</span><strong class="num">${fmt(m.p)} г</strong></div></div>
     <div><div class="grp">Продукти на цю порцію</div><div class="card rows">${ing}</div></div>
     ${m.swapped?`<button class="btn ghost" data-unswap="${esc(m.key)}">Повернути страву з плану: ${esc(m.orig)}</button>`:""}
-    <div><div class="grp">Замінити на (калорії лишаться ті самі)</div><div class="rows">${alts.length?alts.map(altB).join(""):'<div class="info">Немає страв, які тобі підходять. Спробуй у «Профіль» → «Що не їм» обрати, чим замінювати продукт, який не їси.</div>'}</div></div>
+${full()?`    <div><div class="grp">Замінити на (калорії лишаться ті самі)</div><div class="rows">${alts.length?alts.map(altB).join(""):'<div class="info">Немає страв, які тобі підходять. Спробуй у «Профіль» → «Що не їм» обрати, чим замінювати продукт, який не їси.</div>'}</div></div>
     ${other.length?`<details class="tip"><summary>Інші страви на ${esc(m.lbl.toLowerCase())} (${other.length})</summary><div class="rows">${other.map(altB).join("")}</div></details>`:""}
     ${m.bad?"":`<button class="btn ghost" data-favt="${esc(m.slotType)}" data-favd="${esc(m.name)}" data-reopen="${m.s}">${isFav?"★ Прибрати з улюблених":"☆ В улюблені "+esc(favL)}</button>`}
+`:`<div class="info">Замінити страву, змінити порядок чи додати в улюблені можна з підпискою.</div><button class="btn" data-pay="1">Відкрити повний доступ</button>`}
     <button class="btn ghost" data-${dis?"undis":"dis"}="${esc(m.name)}" data-reopen="${m.s}">${dis?"Прибрати з «не подобається»":"Не подобається ця страва"}</button>
     <button class="btn ghost" data-close="1">Закрити</button></div></div>`;
   tgBack(true);
@@ -628,6 +681,9 @@ document.addEventListener("click",e=>{
   if(d.intro){if(d.intro==="next"){S.introStep++;renderIntro();return}
     S.seenIntro=true;save();if(d.intro==="start"){S.tab="me";S.firstPrefs=true}render();window.scrollTo(0,0);return}
   if(d.day){S.day=+d.day;render();return}
+  if(d.pay){closeSheet();openPay();return}
+  if(d.buy){buy();return}
+  if(!full()&&(d.mv!==undefined||d.meals||d.fav||d.swap||d.favt)){closeSheet();openPay();return}
   if(d.mv!==undefined){const ms=dayMeals(S.day),i=+d.mv,j=i+(+d.dir),A=ms[i],B=ms[j];if(!A||!B)return;
     const set=(m,v)=>{if(v===m.orig)delete S.swaps[m.key];else S.swaps[m.key]=v};set(A,B.name);set(B,A.name);save();render();haptic();return}
   if(d.meal!==undefined){openMeal(d.meal);return}
@@ -681,6 +737,7 @@ async function boot(){
     Object.assign(S,{profile:migrate(v.profile),swaps:migSwaps(v.swaps||{}),checked:v.checked||{},tpl:v.tpl||"",meals:[3,4,5].includes(v.meals)?v.meals:4,fav:Object.assign({Сніданок:[],Основна:[],Перекус:[]},v.fav||{}),seenIntro:!!v.seenIntro||!!v.profile,
       prefs:Object.assign({excl:{},sub:{},dis:{},noGl:false,noLac:false,noBob:false},v.prefs||{})})}}catch(e){}
   render();
+  await loadAccess();render();
 }
 function setTheme(t){document.documentElement.dataset.theme=t.colorScheme==="dark"?"dark":"light";
   try{const bg=getComputedStyle(document.body).backgroundColor;t.setHeaderColor&&t.setHeaderColor(bg);t.setBackgroundColor&&t.setBackgroundColor(bg)}catch(e){}}
