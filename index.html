@@ -511,7 +511,9 @@ function buildPlan(){
       else{const ofT=tday.filter(x=>DISH[x].type===ty),L=tl[ty]||[];
         dish=ofT[j]||(L.length?L[(di+3*j)%L.length]:Object.keys(DISH).find(x=>DISH[x].type===ty));
         if(conflict(dish)){const k0=DISH[dish].kc;
-          const c=Object.keys(DISH).filter(n=>DISH[n].type===ty&&!conflict(n)&&!day.has(n)&&!DISH[n].mine)
+          let c=Object.keys(DISH).filter(n=>DISH[n].type===ty&&!conflict(n)&&!day.has(n)&&!DISH[n].mine);
+          if(!c.length)c=Object.keys(DISH).filter(n=>!conflict(n)&&!day.has(n)&&!DISH[n].mine&&(ty==="Перекус"?DISH[n].type!=="Основна":true));
+          c=c
             .sort((a,b)=>(week[a]||0)-(week[b]||0)||Math.abs(DISH[a].kc-k0)-Math.abs(DISH[b].kc-k0)||(a<b?-1:1));
           if(c.length){from=dish;dish=c[0];auto=true}}}
       day.add(dish);week[dish]=(week[dish]||0)+1;
@@ -521,7 +523,7 @@ function dayMeals(di){
   const kc=calc(S.profile).kcal,day=DAYS[di],t=tplName(),n=S.meals;
   return (PLAN[di]||[]).map((x,s)=>{
     const key=t+"|"+n+"|"+day+"|"+s;const sw=S.swaps[key];
-    const name=sw&&DISH[sw]?sw:x.dish,D=DISH[name],slotKc=kc*x.sh;
+    const name=sw&&DISH[sw]&&!conflict(sw)?sw:x.dish,D=DISH[name],slotKc=kc*x.sh;
     const portion=r1(Math.min(Math.max(slotKc/D.kc,.5),2.5));
     return {key,s,di,lbl:x.lbl,slotType:x.ty,slotKc,name,orig:x.dish,auto:x.auto&&name===x.dish,from:x.from,go:D.go,fish:D.fish,swapped:name!==x.dish,portion,kc:D.kc*portion,p:D.p*portion,cost:D.cost*portion,miss:D.miss,tags:D.tags,type:D.type,ma:D.ma,notes:D.notes,bad:conflict(name)};
   });
